@@ -4,24 +4,24 @@ import { Inter } from 'next/font/google'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Gud Tek - Hackathon-Powered BONK Tech | Solana Meme Coin',
-  description: 'Gud Tek is a revolutionary hackathon-powered BONK tech project on Solana. Join the community, track live charts, and be part of the future of decentralized technology.',
-  keywords: 'Gud Tek, BONK, Solana, cryptocurrency, meme coin, hackathon, blockchain, DeFi, crypto trading',
+  title: 'Gud Tek - First BONK Hackathon Winner #1 | Solana Meme Coin',
+  description: 'Gud Tek made history as the first ever BONK hackathon project and #1 winner on hackathon.letsbonk.fun. Revolutionary hackathon-powered BONK tech on Solana blockchain.',
+  keywords: 'Gud Tek, BONK, Solana, cryptocurrency, meme coin, hackathon winner, blockchain, DeFi, crypto trading, hackathon.letsbonk.fun',
   authors: [{ name: 'Gud Tek Team' }],
   creator: 'Gud Tek',
   publisher: 'Gud Tek',
   robots: 'index, follow',
   openGraph: {
-    title: 'Gud Tek - Hackathon-Powered BONK Tech',
-    description: 'Revolutionary hackathon-powered BONK tech on Solana. Track live charts, join our community, and experience the future of decentralized technology.',
+    title: 'Gud Tek - First BONK Hackathon Winner #1',
+    description: 'Historic achievement: First ever BONK hackathon project and #1 winner. Experience revolutionary hackathon-powered BONK tech on Solana.',
     url: 'https://gudtek.com',
     siteName: 'Gud Tek',
     images: [
       {
-        url: '/images/gudtek-logo.png',
+        url: 'https://gudtek.com/images/gudtek-og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Gud Tek Logo',
+        alt: 'Gud Tek - First BONK Hackathon Winner',
       },
     ],
     locale: 'en_US',
@@ -29,18 +29,30 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gud Tek - Hackathon-Powered BONK Tech',
-    description: 'Revolutionary hackathon-powered BONK tech on Solana. Join the community and experience the future!',
-    images: ['/images/gudtek-logo.png'],
-    creator: '@GudTekOfficial',
+    title: 'Gud Tek - First BONK Hackathon Winner #1',
+    description: 'Historic achievement: First ever BONK hackathon project and #1 winner on hackathon.letsbonk.fun',
+    creator: '@gudtek',
+    images: ['https://gudtek.com/images/gudtek-og-image.png'],
   },
+  icons: {
+    icon: [
+      { url: '/Untitleddesign(5).svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' }
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+    ],
+    shortcut: '/Untitleddesign(5).svg'
+  },
+  manifest: '/site.webmanifest',
   alternates: {
     canonical: 'https://gudtek.com',
   },
   verification: {
-    // Add verification codes when available
-    // google: 'verification-code',
+    google: 'your-google-verification-code',
   },
+  category: 'Cryptocurrency',
 }
 
 export default function RootLayout({
@@ -51,13 +63,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preload" href="/bonk1-bonk-logo.svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/Untitleddesign(5).svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/x (1).svg" as="image" type="image/svg+xml" />
         <meta name="theme-color" content="#f97316" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="msapplication-TileColor" content="#f97316" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
