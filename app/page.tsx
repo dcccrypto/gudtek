@@ -148,7 +148,7 @@ export default function GudTekLanding() {
               <div className="bg-gradient-to-r from-yellow-300 to-orange-400 border-4 border-gray-900 rounded-2xl p-4 shadow-2xl max-w-md mx-auto">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Trophy className="w-8 h-8 text-gray-900" />
-                  <span className="text-2xl font-black text-gray-900">#1 HACKATHON WINNER</span>
+                  <span className="text-2xl font-black text-gray-900">#1 LEADING HACKATHON</span>
                   <Trophy className="w-8 h-8 text-gray-900" />
                 </div>
                 <p className="text-sm font-bold text-gray-800">First Ever BONK Hackathon Project</p>
@@ -271,7 +271,7 @@ export default function GudTekLanding() {
                   aria-label="View Gud Tek #1 position on BONK Hackathon leaderboard"
                 >
                   <Award className="mr-2" aria-hidden="true" />
-                  🏆 View Our #1 Hackathon Win
+                  🚀 View Our #1 Leading Position
                 </Button>
               </div>
 
@@ -329,10 +329,10 @@ export default function GudTekLanding() {
             >
               <h2 className="text-5xl md:text-6xl font-black text-gray-900 mb-6">
                 <Trophy className="inline-block mr-4" aria-hidden="true" />
-                Hackathon Champions
+                Leading the BONK Hackathon
               </h2>
               <p className="text-xl text-gray-800 max-w-3xl mx-auto">
-                Making history as the first ever BONK hackathon project and claiming the #1 position on the official leaderboard
+                The first ever project on the BONK hackathon platform, currently holding the #1 position on the leaderboard
               </p>
             </motion.div>
 
@@ -351,7 +351,7 @@ export default function GudTekLanding() {
                       <span className="text-3xl font-black text-gray-900">#1</span>
                     </div>
                     <div>
-                      <h3 className="text-3xl font-black text-gray-900">Leaderboard Position</h3>
+                      <h3 className="text-3xl font-black text-gray-900">Currently Leading</h3>
                       <p className="text-lg text-gray-700">hackathon.letsbonk.fun</p>
                     </div>
                   </div>
@@ -362,11 +362,11 @@ export default function GudTekLanding() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <Star className="w-6 h-6 text-yellow-600" />
-                      <span className="text-lg font-bold text-gray-800">Top Innovation Award Winner</span>
+                      <span className="text-lg font-bold text-gray-800">Leading Innovation on Solana</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Star className="w-6 h-6 text-yellow-600" />
-                      <span className="text-lg font-bold text-gray-800">Community Choice Champion</span>
+                      <span className="text-lg font-bold text-gray-800">Top Community Choice</span>
                     </div>
                   </div>
                 </div>
@@ -378,7 +378,7 @@ export default function GudTekLanding() {
                   aria-label="Visit BONK Hackathon official website"
                 >
                   <ExternalLink className="mr-2" aria-hidden="true" />
-                  Visit Official Hackathon Site
+                  Check Our Leaderboard Position
                 </Button>
               </motion.div>
 
@@ -391,15 +391,15 @@ export default function GudTekLanding() {
                 className="text-center"
               >
                 <div className="bg-white/20 backdrop-blur-sm rounded-3xl p-12 border-4 border-gray-900 shadow-2xl">
-                  <div className="text-9xl mb-6" aria-hidden="true">🏆</div>
-                  <h3 className="text-4xl font-black text-gray-900 mb-4">Historic Achievement</h3>
+                  <div className="text-9xl mb-6" aria-hidden="true">🚀</div>
+                  <h3 className="text-4xl font-black text-gray-900 mb-4">Making History</h3>
                   <p className="text-lg text-gray-800 leading-relaxed mb-6">
-                    Gud Tek broke new ground by becoming the first project to successfully leverage BONK's hackathon platform, 
-                    demonstrating true innovation in the Solana ecosystem and earning the top spot among all participants.
+                    Gud Tek broke new ground by becoming the first project to launch on BONK's hackathon platform. 
+                    We're currently leading the competition and setting the standard for innovation in the Solana ecosystem.
                   </p>
                   {/* BONK Logo Integration */}
                   <div className="flex items-center justify-center space-x-3 mb-6">
-                    <span className="text-2xl font-black text-gray-900">Powered by</span>
+                    <span className="text-2xl font-black text-gray-900">Built on</span>
                     <img
                       src="/bonk1-bonk-logo.svg"
                       alt="BONK Logo"
@@ -410,8 +410,8 @@ export default function GudTekLanding() {
                     <span className="text-2xl font-black text-gray-900">BONK</span>
                   </div>
                   <div className="bg-yellow-300 rounded-2xl p-6 border-4 border-gray-900">
-                    <p className="text-2xl font-black text-gray-900 mb-2">VERIFIED WINNER</p>
-                    <p className="text-sm font-bold text-gray-700">hackathon.letsbonk.fun</p>
+                    <p className="text-2xl font-black text-gray-900 mb-2">LEADING THE RACE</p>
+                    <p className="text-sm font-bold text-gray-700">First & #1 on hackathon.letsbonk.fun</p>
                   </div>
                 </div>
               </motion.div>
