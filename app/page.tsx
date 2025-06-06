@@ -38,7 +38,7 @@ export default function GudTekLanding() {
       "https://x.com/i/communities/1930994127895703976",
       "https://hackathon.letsbonk.fun"
     ],
-    "foundingDate": "2024",
+    "foundingDate": "2025",
     "industry": "Cryptocurrency",
     "keywords": "BONK, Solana, cryptocurrency, meme coin, hackathon, blockchain, DeFi, hackathon winner",
     "award": "First BONK Hackathon Winner - #1 on hackathon.letsbonk.fun"
@@ -835,7 +835,7 @@ export default function GudTekLanding() {
               </p>
             </div>
             <div className="text-gray-700 text-sm space-y-2">
-              <p>© 2024 Gud Tek. All rights reserved.</p>
+              <p>© 2025 Gud Tek. All rights reserved.</p>
               <p>
                 <strong>Disclaimer:</strong> Cryptocurrency investments carry risk. Please do your own research before investing.
               </p>
