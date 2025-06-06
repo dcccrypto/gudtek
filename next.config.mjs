@@ -1,13 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static optimization
-  output: 'export',
+  // Removed output: 'export' to enable API routes on Vercel
+  // Static exports don't support server-side functionality like API routes
   trailingSlash: true,
   
   // Image optimization
   images: {
+    // Keep unoptimized for compatibility, but remove domains restriction
     unoptimized: true,
-    domains: ['gudtek.com'],
   },
   
   // SEO and performance optimizations
