@@ -1,5 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
+import SolanaProvider from '@/components/SolanaProvider'
+import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -74,7 +76,12 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <SolanaProvider>
+          {children}
+          <Toaster />
+        </SolanaProvider>
+      </body>
     </html>
   )
 }

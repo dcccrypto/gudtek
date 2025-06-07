@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { Copy, ExternalLink, TrendingUp, Zap, BarChart3, Users, Rocket, Lock, Flame, DollarSign, Target, CheckCircle, ArrowRight, Trophy, Award, Star, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import TokenStats from "@/components/TokenStats"
 
 export default function GudTekLanding() {
   const [copied, setCopied] = useState(false)
@@ -50,6 +51,7 @@ export default function GudTekLanding() {
     { name: "Tokenomics", href: "#tokenomics" },
     { name: "How to Buy", href: "#how-to-buy" },
     { name: "Chart", href: "#chart" },
+    { name: "Memes", href: "/memes" },
     { name: "Community", href: "#community" },
     { name: "About", href: "#about" },
   ]
@@ -136,22 +138,22 @@ export default function GudTekLanding() {
         </nav>
 
         {/* Hero Section (adjust padding-top for fixed nav) */}
-        <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center px-4 text-center pt-16">
+        <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center px-4 text-center pt-24">
           <motion.div style={{ y, opacity }} className="relative z-20">
-            {/* Hackathon Winner Badge */}
+            {/* Hackathon Winner Badge - Compact */}
             <motion.div
               initial={{ scale: 0, rotate: 180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-              className="mb-6"
+              className="mb-6 mt-4"
             >
-              <div className="bg-gradient-to-r from-yellow-300 to-orange-400 border-4 border-gray-900 rounded-2xl p-4 shadow-2xl max-w-md mx-auto">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Trophy className="w-8 h-8 text-gray-900" />
-                  <span className="text-2xl font-black text-gray-900">#1 LEADING HACKATHON</span>
-                  <Trophy className="w-8 h-8 text-gray-900" />
+              <div className="bg-gradient-to-r from-yellow-300 to-orange-400 border-2 border-gray-900 rounded-xl p-2 shadow-xl max-w-xs mx-auto">
+                <div className="flex items-center justify-center space-x-1 mb-1">
+                  <Trophy className="w-4 h-4 text-gray-900" />
+                  <span className="text-sm font-black text-gray-900">#1 LEADING HACKATHON</span>
+                  <Trophy className="w-4 h-4 text-gray-900" />
                 </div>
-                <p className="text-sm font-bold text-gray-800">First Ever BONK Hackathon Project</p>
+                <p className="text-xs font-bold text-gray-800">First Ever BONK Hackathon Project</p>
               </div>
             </motion.div>
 
@@ -209,23 +211,25 @@ export default function GudTekLanding() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="text-xl md:text-2xl font-bold text-gray-700 mb-12 max-w-2xl mx-auto"
+              className="text-xl md:text-2xl font-bold text-gray-700 mb-8 max-w-2xl mx-auto"
             >
               HACKATHON-POWERED BONK TECH ON SOLANA
             </motion.h3>
 
-            {/* Contract Address Section */}
+            {/* Live Token Stats */}
+            <TokenStats />
+
+            {/* Contract Address Section - Simplified */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
+              transition={{ duration: 0.8, delay: 1.0 }}
               className="mb-8"
             >
-              <div className="bg-yellow-100 border-2 border-gray-900 rounded-xl p-4 max-w-2xl mx-auto shadow-lg">
-                <h3 className="text-sm font-bold text-gray-700 mb-2">Official Solana Contract Address:</h3>
-                <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="bg-white/20 backdrop-blur-md border-2 border-gray-900 rounded-xl p-3 max-w-lg mx-auto shadow-lg">
+                <div className="flex items-center gap-3">
                   <code 
-                    className="text-sm font-mono text-gray-900 break-all flex-1 text-center sm:text-left"
+                    className="text-xs font-mono text-gray-900 break-all flex-1 text-center"
                     title="Gud Tek Solana Contract Address"
                   >
                     {contractAddress}
@@ -233,11 +237,10 @@ export default function GudTekLanding() {
                   <Button
                     onClick={copyToClipboard}
                     size="sm"
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-3 py-1 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
                     aria-label="Copy contract address to clipboard"
                   >
-                    <Copy className="mr-1 h-3 w-3" aria-hidden="true" />
-                    {copied ? "Copied!" : "Copy"}
+                    <Copy className="h-3 w-3" aria-hidden="true" />
                   </Button>
                 </div>
                 {copied && (
@@ -245,36 +248,23 @@ export default function GudTekLanding() {
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
-                    className="mt-2 text-center text-2xl"
+                    className="mt-1 text-center text-lg"
                     role="status"
                     aria-live="polite"
                   >
-                    ✨🎉✨
+                    ✨ Copied! ✨
                   </motion.div>
                 )}
               </div>
             </motion.div>
 
-            {/* Primary Action Buttons */}
+            {/* Primary Action Buttons - Simplified */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.0 }}
-              className="space-y-6"
+              transition={{ duration: 0.8, delay: 1.2 }}
+              className="space-y-4"
             >
-              {/* Hackathon Achievement Button */}
-              <div className="mb-6">
-                <Button
-                  size="lg"
-                  onClick={() => window.open("https://hackathon.letsbonk.fun", "_blank")}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-black px-8 py-4 text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-gray-900"
-                  aria-label="View Gud Tek #1 position on BONK Hackathon leaderboard"
-                >
-                  <Award className="mr-2" aria-hidden="true" />
-                  🚀 View Our #1 Leading Position
-                </Button>
-              </div>
-
               {/* Main CTAs */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button
@@ -286,18 +276,18 @@ export default function GudTekLanding() {
                   aria-label="Buy Gud Tek tokens on Jupiter"
                 >
                   <ArrowRight className="mr-2" />
-                  Start Buying Now
+                  Buy $GUDTEK
                 </Button>
                 <Button
                   size="lg"
                   onClick={() =>
                     window.open("https://dexscreener.com/solana/AbWYapHJeWhGPQ748yqhkJqBhHiWwboFVR76m95dgW9H", "_blank")
                   }
-                  className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-8 py-4 text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 min-w-[160px] border-2 border-gray-900"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-8 py-4 text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-gray-900"
                   aria-label="View Gud Tek price chart on DexScreener"
                 >
                   <TrendingUp className="mr-2" aria-hidden="true" />
-                  View Live Chart
+                  View Chart
                 </Button>
               </div>
 
@@ -305,12 +295,21 @@ export default function GudTekLanding() {
               <div className="flex flex-wrap gap-3 justify-center items-center">
                 <Button
                   variant="outline"
+                  onClick={() => window.open("https://hackathon.letsbonk.fun", "_blank")}
+                  className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold px-4 py-2 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+                  aria-label="View #1 Hackathon position"
+                >
+                  <Trophy className="mr-2 h-4 w-4" aria-hidden="true" />
+                  #1 Hackathon
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => window.open("https://x.com/ccpp911/status/1930987147504259243", "_blank")}
-                  className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold px-6 py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+                  className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold px-4 py-2 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
                   aria-label="Follow Gud Tek on X (Twitter)"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Follow on X
+                  Follow X
                 </Button>
               </div>
             </motion.div>
