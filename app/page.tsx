@@ -2,14 +2,17 @@
 
 import { useState } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { Copy, ExternalLink, TrendingUp, Zap, BarChart3, Users, Rocket, Lock, Flame, DollarSign, Target, CheckCircle, ArrowRight, Trophy, Award, Star, Menu, X } from "lucide-react"
+import { Copy, ExternalLink, TrendingUp, Zap, BarChart3, Users, Rocket, Lock, Flame, DollarSign, Target, CheckCircle, ArrowRight, Trophy, Award, Star, Menu, X, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import TokenStats from "@/components/TokenStats"
+import FeedbackForm from "@/components/FeedbackForm"
+
 
 export default function GudTekLanding() {
   const [copied, setCopied] = useState(false)
   const [isNavOpen, setIsNavOpen] = useState(false) // State for mobile nav
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false) // State for feedback form
   const { scrollYProgress } = useScroll()
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3])
@@ -47,6 +50,7 @@ export default function GudTekLanding() {
 
   const navItems = [
     { name: "Home", href: "#hero" },
+    { name: "Announcements", href: "/announcements" },
     { name: "Hackathon", href: "#hackathon" },
     { name: "Tokenomics", href: "#tokenomics" },
     { name: "How to Buy", href: "#how-to-buy" },
@@ -71,7 +75,7 @@ export default function GudTekLanding() {
         </div>
 
         {/* Navbar */}
-        <nav className="fixed top-0 left-0 right-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30">
+        <nav className="fixed left-0 right-0 top-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center">
@@ -137,181 +141,149 @@ export default function GudTekLanding() {
           </div>
         </nav>
 
-        {/* Hero Section (adjust padding-top for fixed nav) */}
+        {/* Hero Section - Clean & Focused */}
         <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center px-4 text-center pt-24">
-          <motion.div style={{ y, opacity }} className="relative z-20">
-            {/* Hackathon Winner Badge - Compact */}
+          <motion.div style={{ y, opacity }} className="relative z-20 max-w-4xl mx-auto">
+            {/* Winner Badge - Simplified */}
             <motion.div
-              initial={{ scale: 0, rotate: 180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-              className="mb-6 mt-4"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mb-8"
             >
-              <div className="bg-gradient-to-r from-yellow-300 to-orange-400 border-2 border-gray-900 rounded-xl p-2 shadow-xl max-w-xs mx-auto">
-                <div className="flex items-center justify-center space-x-1 mb-1">
-                  <Trophy className="w-4 h-4 text-gray-900" />
-                  <span className="text-sm font-black text-gray-900">#1 LEADING HACKATHON</span>
-                  <Trophy className="w-4 h-4 text-gray-900" />
-                </div>
-                <p className="text-xs font-bold text-gray-800">First Ever BONK Hackathon Project</p>
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-300 to-orange-400 border-2 border-gray-900 rounded-full px-4 py-2 shadow-xl">
+                <Trophy className="w-5 h-5 text-gray-900" />
+                <span className="text-sm font-black text-gray-900">#1 BONK HACKATHON WINNER</span>
               </div>
             </motion.div>
 
-            {/* Logo with BONK integration */}
+            {/* Logo - Cleaner */}
             <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="mb-8 relative"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="mb-8"
             >
-              <div className="relative">
-                <img
-                  src="/images/gudtek-logo.png"
-                  alt="Gud Tek Logo - #1 BONK Hackathon Winner - First hackathon-powered BONK tech on Solana"
-                  className="w-48 h-48 mx-auto rounded-full shadow-2xl border-4 border-gray-900"
-                  width={192}
-                  height={192}
-                  loading="eager"
-                />
-                {/* BONK Logo Corner Badge */}
-                <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-orange-500 rounded-full border-4 border-gray-900 flex items-center justify-center shadow-xl">
-                  <img
-                    src="/bonk1-bonk-logo.svg"
-                    alt="BONK Logo"
-                    className="w-10 h-10"
-                    width={40}
-                    height={40}
-                  />
-                </div>
-              </div>
+              <img
+                src="/images/gudtek-logo.png"
+                alt="Gud Tek - First BONK Hackathon Winner"
+                className="w-32 h-32 md:w-40 md:h-40 mx-auto rounded-full shadow-2xl border-4 border-gray-900"
+                width={160}
+                height={160}
+                loading="eager"
+              />
             </motion.div>
 
-            {/* Main Heading */}
+            {/* Main Heading - Simplified */}
             <motion.h1
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="text-7xl md:text-9xl font-black text-gray-900 mb-4 tracking-tight"
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="text-6xl md:text-8xl font-black text-gray-900 mb-6 tracking-tight"
               style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}
             >
               GUD TEK
             </motion.h1>
 
-            {/* Subtitle with SEO Keywords */}
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-              className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 max-w-2xl mx-auto"
-            >
-              FIRST EVER BONK HACKATHON PROJECT
-            </motion.h2>
-
-            <motion.h3
-              initial={{ opacity: 0, y: 30 }}
+            {/* Clear Value Proposition */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="text-xl md:text-2xl font-bold text-gray-700 mb-8 max-w-2xl mx-auto"
+              className="text-xl md:text-2xl font-bold text-gray-800 mb-12 max-w-2xl mx-auto leading-relaxed"
             >
-              HACKATHON-POWERED BONK TECH ON SOLANA
-            </motion.h3>
+              First ever BONK hackathon project<br />
+              <span className="text-lg text-gray-700">Revolutionary hackathon-powered tech on Solana</span>
+            </motion.p>
 
-            {/* Live Token Stats */}
-            <TokenStats />
-
-            {/* Contract Address Section - Simplified */}
+            {/* Primary Action - Single Strong CTA */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.0 }}
+              className="mb-12"
+            >
+              <Button
+                size="lg"
+                onClick={() =>
+                  window.open("https://jup.ag/swap/SOL-5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk", "_blank")
+                }
+                className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-bold px-12 py-4 text-xl rounded-xl shadow-xl transform hover:scale-105 transition-all duration-200"
+                aria-label="Buy Gud Tek tokens on Jupiter"
+              >
+                <Rocket className="mr-3 w-6 h-6" />
+                Buy $GUDTEK Now
+              </Button>
+            </motion.div>
+
+            {/* Live Stats - Compact */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.2 }}
               className="mb-8"
             >
-              <div className="bg-white/20 backdrop-blur-md border-2 border-gray-900 rounded-xl p-3 max-w-lg mx-auto shadow-lg">
-                <div className="flex items-center gap-3">
-                  <code 
-                    className="text-xs font-mono text-gray-900 break-all flex-1 text-center"
-                    title="Gud Tek Solana Contract Address"
-                  >
+              <TokenStats />
+            </motion.div>
+
+            {/* Contract Address - Simplified */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.4 }}
+              className="mb-8"
+            >
+              <div className="bg-white/20 backdrop-blur-sm border border-gray-900/20 rounded-lg p-3 max-w-md mx-auto">
+                <p className="text-xs text-gray-700 mb-1">Contract Address</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono text-gray-900 break-all flex-1">
                     {contractAddress}
                   </code>
                   <Button
                     onClick={copyToClipboard}
                     size="sm"
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-3 py-1 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
-                    aria-label="Copy contract address to clipboard"
+                    className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded"
+                    aria-label="Copy contract address"
                   >
-                    <Copy className="h-3 w-3" aria-hidden="true" />
+                    <Copy className="h-3 w-3" />
                   </Button>
                 </div>
                 {copied && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="mt-1 text-center text-lg"
-                    role="status"
-                    aria-live="polite"
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-xs text-green-700 mt-1"
                   >
-                    ✨ Copied! ✨
-                  </motion.div>
+                    ✓ Copied to clipboard
+                  </motion.p>
                 )}
               </div>
             </motion.div>
 
-            {/* Primary Action Buttons - Simplified */}
+            {/* Secondary Actions - Minimal */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-              className="space-y-4"
+              transition={{ duration: 0.8, delay: 1.6 }}
+              className="flex flex-wrap justify-center gap-4 mb-12"
             >
-              {/* Main CTAs */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button
-                  size="lg"
-                  onClick={() =>
-                    window.open("https://jup.ag/swap/SOL-5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk", "_blank")
-                  }
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-12 py-4 text-xl rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-orange-400"
-                  aria-label="Buy Gud Tek tokens on Jupiter"
-                >
-                  <ArrowRight className="mr-2" />
-                  Buy $GUDTEK
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={() =>
-                    window.open("https://dexscreener.com/solana/AbWYapHJeWhGPQ748yqhkJqBhHiWwboFVR76m95dgW9H", "_blank")
-                  }
-                  className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-8 py-4 text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-gray-900"
-                  aria-label="View Gud Tek price chart on DexScreener"
-                >
-                  <TrendingUp className="mr-2" aria-hidden="true" />
-                  View Chart
-                </Button>
-              </div>
-
-              {/* Secondary CTAs */}
-              <div className="flex flex-wrap gap-3 justify-center items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => window.open("https://hackathon.letsbonk.fun", "_blank")}
-                  className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold px-4 py-2 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
-                  aria-label="View #1 Hackathon position"
-                >
-                  <Trophy className="mr-2 h-4 w-4" aria-hidden="true" />
-                  #1 Hackathon
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => window.open("https://x.com/ccpp911/status/1930987147504259243", "_blank")}
-                  className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold px-4 py-2 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
-                  aria-label="Follow Gud Tek on X (Twitter)"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Follow X
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                onClick={() => window.open("https://dexscreener.com/solana/AbWYapHJeWhGPQ748yqhkJqBhHiWwboFVR76m95dgW9H", "_blank")}
+                className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-semibold px-4 py-2 rounded-lg"
+              >
+                <TrendingUp className="mr-2 h-4 w-4" />
+                View Chart
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open("https://hackathon.letsbonk.fun", "_blank")}
+                className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-semibold px-4 py-2 rounded-lg"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Hackathon
+              </Button>
             </motion.div>
           </motion.div>
         </section>
@@ -841,6 +813,49 @@ export default function GudTekLanding() {
             </div>
           </div>
         </footer>
+
+        {/* Floating Feedback Button with Enhanced Visibility */}
+        <motion.div className="fixed bottom-6 right-6 z-40 group">
+          {/* Pulse ring animation for better visibility */}
+          <motion.div
+            className="absolute inset-0 bg-orange-400 rounded-full"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.7, 0, 0.7]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          
+          {/* Tooltip */}
+          <motion.div
+            className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap"
+            initial={{ opacity: 0, y: 10 }}
+            whileHover={{ opacity: 1, y: 0 }}
+          >
+            💬 Share your feedback!
+            <div className="absolute top-full right-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+          </motion.div>
+          
+          <motion.button
+            onClick={() => setIsFeedbackOpen(true)}
+            className="relative bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.5, duration: 0.5 }}
+            aria-label="Open feedback form"
+          >
+            <MessageSquare className="w-6 h-6" />
+          </motion.button>
+        </motion.div>
+
+        {/* Feedback Form Modal */}
+        <FeedbackForm isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
       </div>
     </>
   )

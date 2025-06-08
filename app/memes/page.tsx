@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Heart, Upload, Wallet, Trophy, Calendar, Users, AlertCircle, CheckCircle, Menu, X, Home } from 'lucide-react'
+import { Heart, Upload, Wallet, Trophy, Calendar, Users, AlertCircle, CheckCircle, Menu, X, Home, MessageSquare } from 'lucide-react'
 import { supabase, type Meme, type User, type WeeklyContest, uploadMemeImage } from '@/lib/supabase'
 import { FileUpload } from '@/components/ui/file-upload'
+import FeedbackForm from '@/components/FeedbackForm'
 import { 
   getWalletInfo, 
   checkVotingEligibility, 
@@ -38,6 +39,7 @@ export default function MemesPage() {
   const [submitLoading, setSubmitLoading] = useState(false)
   const [votingLoading, setVotingLoading] = useState<string | null>(null)
   const [isNavOpen, setIsNavOpen] = useState(false)
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   
   // Wallet info state
   const [walletInfo, setWalletInfo] = useState({
@@ -860,6 +862,23 @@ export default function MemesPage() {
           )}
         </div>
       </div>
+
+      {/* Floating Feedback Button */}
+      <motion.button
+        onClick={() => setIsFeedbackOpen(true)}
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white p-4 rounded-full shadow-2xl z-40 transition-all duration-300 hover:scale-110"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1, duration: 0.5 }}
+        aria-label="Open feedback form"
+      >
+        <MessageSquare className="w-6 h-6" />
+      </motion.button>
+
+      {/* Feedback Form Modal */}
+      <FeedbackForm isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   )
 } 

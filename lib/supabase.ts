@@ -5,10 +5,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Storage bucket name for meme uploads
+// Storage bucket names
 export const MEMES_BUCKET = 'memes'
+export const ANNOUNCEMENTS_BUCKET = 'announcement'
 
-// File upload utilities
+// File upload utilities for memes
 export const uploadMemeImage = async (file: File, fileName: string) => {
   try {
     // Generate unique filename with timestamp
@@ -44,6 +45,42 @@ export const uploadMemeImage = async (file: File, fileName: string) => {
   }
 }
 
+// File upload utilities for announcements
+export const uploadAnnouncementImage = async (file: File, fileName: string) => {
+  try {
+    // Generate unique filename with timestamp
+    const timestamp = Date.now()
+    const fileExtension = file.name.split('.').pop()
+    const uniqueFileName = `${timestamp}-${fileName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${fileExtension}`
+    
+    // Upload file to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(ANNOUNCEMENTS_BUCKET)
+      .upload(uniqueFileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) {
+      console.error('Upload error:', error)
+      throw error
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(ANNOUNCEMENTS_BUCKET)
+      .getPublicUrl(uniqueFileName)
+
+    return {
+      filePath: data.path,
+      publicUrl: publicUrl
+    }
+  } catch (error) {
+    console.error('Error uploading announcement image:', error)
+    throw error
+  }
+}
+
 // Delete meme image (for admin use)
 export const deleteMemeImage = async (filePath: string) => {
   try {
@@ -55,6 +92,21 @@ export const deleteMemeImage = async (filePath: string) => {
     return true
   } catch (error) {
     console.error('Error deleting meme image:', error)
+    throw error
+  }
+}
+
+// Delete announcement image (for admin use)
+export const deleteAnnouncementImage = async (filePath: string) => {
+  try {
+    const { error } = await supabase.storage
+      .from(ANNOUNCEMENTS_BUCKET)
+      .remove([filePath])
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error deleting announcement image:', error)
     throw error
   }
 }
@@ -94,6 +146,122 @@ export interface WeeklyContest {
   prize_amount: string | number
   status: 'active' | 'completed'
   winner_meme_id?: string
-  winner_wallet?: string
   created_at: string
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  message: string
+  type: 'info' | 'warning' | 'success' | 'announcement'
+  priority: number
+  is_active: boolean
+  expires_at?: string
+  image_url?: string
+  image_path?: string
+  created_at: string
+  updated_at: string
+}
+
+// Announcement database functions
+export const getActiveAnnouncements = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .eq('is_active', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order('priority', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching active announcements:', error)
+    throw error
+  }
+}
+
+export const getAllAnnouncements = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching all announcements:', error)
+    throw error
+  }
+}
+
+export const createAnnouncement = async (announcement: {
+  title: string
+  message: string
+  type: 'info' | 'warning' | 'success' | 'announcement'
+  priority: number
+  expires_at?: string
+  image_url?: string
+  image_path?: string
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert([announcement])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error creating announcement:', error)
+    throw error
+  }
+}
+
+export const updateAnnouncement = async (id: string, updates: Partial<Announcement>) => {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error updating announcement:', error)
+    throw error
+  }
+}
+
+export const deleteAnnouncement = async (id: string) => {
+  try {
+    // First get the announcement to check if it has an image
+    const { data: announcement } = await supabase
+      .from('announcements')
+      .select('image_path')
+      .eq('id', id)
+      .single()
+
+    // Delete the image if it exists
+    if (announcement?.image_path) {
+      await deleteAnnouncementImage(announcement.image_path)
+    }
+
+    // Delete the announcement
+    const { error } = await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error deleting announcement:', error)
+    throw error
+  }
 } 
