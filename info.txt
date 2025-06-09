@@ -1,0 +1,6 @@
+### Mechanic Sound Effects (High Priority)
+- `token-collect.mp3` - Played when collecting $GUDTEK tokens
+- `obstacle-hit.mp3` - Played when hitting obstacles (most important feedback)
+- `game-start.mp3` - Played when game begins
+- `game-over.mp3` - Played when game ends
+- `life-lost.mp3` - Played when losing a life

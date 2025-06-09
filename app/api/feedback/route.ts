@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { addFeedback, getAllFeedback, getFeedbackStats } from '@/lib/storage'
+import { 
+  createFeedback, 
+  getAllFeedback, 
+  getFeedbackStats 
+} from '@/lib/supabase'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -20,12 +24,12 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Invalid email address' },
         { status: 400 }
       )
     }
 
-    const feedback = addFeedback({
+    const feedback = await createFeedback({
       name: name.trim(),
       email: email.trim().toLowerCase(),
       subject: subject.trim(),
@@ -33,7 +37,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(
-      { message: 'Feedback submitted successfully!', id: feedback.id },
+      { message: 'Feedback submitted successfully!', feedback },
       { status: 201 }
     )
   } catch (error) {
@@ -57,13 +61,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all feedback sorted by timestamp (newest first)
-    const sortedFeedback = getAllFeedback()
-    const stats = getFeedbackStats()
+    const feedback = await getAllFeedback()
+    const stats = await getFeedbackStats()
 
     return NextResponse.json({
-      feedback: sortedFeedback,
+      feedback: feedback,
       total: stats.total,
-      unread: stats.unread,
+      newCount: stats.unread,
       recent: stats.recent
     })
   } catch (error) {

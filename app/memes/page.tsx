@@ -32,8 +32,9 @@ export default function MemesPage() {
   const { connected, publicKey } = useWallet()
   const { connection } = useConnection()
   
-  const [memes, setMemes] = useState<Meme[]>([])
+  const [memes, setMemes] = useState<(Meme & { hasUserVoted?: boolean })[]>([])
   const [currentContest, setCurrentContest] = useState<WeeklyContest | null>(null)
+  const [userVotes, setUserVotes] = useState<Set<string>>(new Set())
   const [isSubmitOpen, setIsSubmitOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitLoading, setSubmitLoading] = useState(false)
@@ -59,13 +60,17 @@ export default function MemesPage() {
   })
   const [uploadLoading, setUploadLoading] = useState(false)
 
-  // Navigation items matching main site
   const navItems = [
-    { name: 'Home', href: '/' },
-    { name: 'Memes', href: '/memes' },
-    { name: 'Tokenomics', href: '/#tokenomics' },
-    { name: 'Community', href: '/#community' },
-    { name: 'Roadmap', href: '/#roadmap' },
+    { name: "Home", href: "/" },
+    { name: "Game", href: "/game" },
+    { name: "Announcements", href: "/announcements" },
+    { name: "Hackathon", href: "/#hackathon" },
+    { name: "Tokenomics", href: "/#tokenomics" },
+    { name: "How to Buy", href: "/#how-to-buy" },
+    { name: "Chart", href: "/#chart" },
+    { name: "Memes", href: "/memes" },
+    { name: "Community", href: "/#community" },
+    { name: "About", href: "/#about" },
   ]
 
   useEffect(() => {
@@ -176,6 +181,11 @@ export default function MemesPage() {
         throw error
       }
       
+      // Load user votes if wallet is connected
+      if (connected && publicKey && data?.length > 0) {
+        await loadUserVotes(data.map((m: Meme) => m.id))
+      }
+      
       console.log('✅ Memes loaded successfully:', data?.length || 0, 'memes')
       setMemes(data || [])
     } catch (error) {
@@ -192,6 +202,30 @@ export default function MemesPage() {
     } finally {
       console.log('✅ Setting loading to false')
       setLoading(false)
+    }
+  }
+
+  const loadUserVotes = async (memeIds: string[]) => {
+    if (!connected || !publicKey || memeIds.length === 0) {
+      setUserVotes(new Set())
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('votes')
+        .select('meme_id')
+        .eq('voter_wallet', publicKey.toString())
+        .in('meme_id', memeIds)
+
+      if (error) throw error
+
+      const votedMemeIds = new Set(data.map(vote => vote.meme_id))
+      setUserVotes(votedMemeIds)
+      console.log('✅ User votes loaded:', votedMemeIds.size)
+    } catch (error) {
+      console.error('Error loading user votes:', error)
+      setUserVotes(new Set())
     }
   }
 
@@ -366,6 +400,16 @@ export default function MemesPage() {
       return
     }
 
+    // Check if user already voted
+    if (userVotes.has(memeId)) {
+      toast({
+        title: "Already Voted",
+        description: "You have already voted for this meme",
+        variant: "destructive",
+      })
+      return
+    }
+
     setVotingLoading(memeId)
     try {
       // Ensure user exists in database (upsert to avoid conflicts)
@@ -396,11 +440,18 @@ export default function MemesPage() {
           throw error
         }
       } else {
+        // Update local state immediately
+        setUserVotes(prev => new Set(prev).add(memeId))
+        setMemes(prev => prev.map(meme => 
+          meme.id === memeId 
+            ? { ...meme, votes_count: (meme.votes_count || 0) + 1 }
+            : meme
+        ))
+
         toast({
           title: "Vote Submitted!",
           description: "Your vote has been recorded",
         })
-        loadMemes() // Refresh to show updated vote count
       }
     } catch (error) {
       console.error('Error voting:', error)
@@ -546,13 +597,16 @@ export default function MemesPage() {
               transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
               className="mb-4 mt-4"
             >
-              <div className="bg-gradient-to-r from-yellow-300 to-orange-400 border-2 border-gray-900 rounded-xl p-2 shadow-xl max-w-xs mx-auto">
-                <div className="flex items-center justify-center space-x-1 mb-1">
-                  <Trophy className="w-4 h-4 text-gray-900" />
-                  <span className="text-sm font-black text-gray-900">MEME GALLERY</span>
-                  <Trophy className="w-4 h-4 text-gray-900" />
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 border-2 border-yellow-400 rounded-xl p-3 shadow-xl max-w-md mx-auto">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <Trophy className="w-4 h-4 text-purple-800" />
+                  </div>
+                  <span className="text-sm font-black text-yellow-300">COMMUNITY MEME GALLERY</span>
                 </div>
-                <p className="text-xs font-bold text-gray-800">Submit, Vote & Win $GUDTEK</p>
+                <p className="text-xs font-medium text-blue-100 text-center">
+                  Share your creativity • Vote for favorites • Win $GUDTEK rewards
+                </p>
               </div>
             </motion.div>
 
@@ -651,25 +705,75 @@ export default function MemesPage() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="mb-8"
             >
-              <Card className="bg-gradient-to-r from-yellow-300 to-orange-400 border-4 border-gray-900 shadow-2xl text-gray-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-2xl font-black">
-                    <Trophy className="w-8 h-8" />
-                    🏆 WEEKLY CONTEST ACTIVE! 🏆
-                  </CardTitle>
-                  <CardDescription className="text-gray-800 font-bold text-lg">
-                    Submit your best memes and win $GUDTEK prizes!
+              <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-4 border-yellow-400 shadow-2xl text-white overflow-hidden relative">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_25%,rgba(255,255,255,0.1)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.1)_75%)] bg-[length:20px_20px] animate-pulse" />
+                </div>
+                
+                <CardHeader className="relative z-10 pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-yellow-400 p-3 rounded-full border-2 border-white shadow-lg">
+                        <Trophy className="w-6 h-6 text-purple-800" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl font-black text-yellow-300">
+                          WEEKLY CONTEST ACTIVE!
+                        </CardTitle>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                          <span className="text-sm text-green-300 font-bold">Live Now</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-black text-yellow-300">Win</div>
+                      <div className="text-2xl font-black text-white">$GUDTEK</div>
+                    </div>
+                  </div>
+                  <CardDescription className="text-blue-100 font-medium text-base mt-3">
+                    Submit your best memes and compete for weekly prizes! 
+                    <span className="text-yellow-300 font-bold"> Community votes decide the winner.</span>
+                    <br />
+                    <span className="text-green-300 font-bold">🎁 Bonus: Active voters also have a chance to win $GUDTEK rewards!</span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap items-center gap-6 text-lg font-bold">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      Contest Ends: {new Date(currentContest.week_end).toLocaleDateString()}
+                
+                <CardContent className="relative z-10">
+                  <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
+                    <div className="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Calendar className="w-4 h-4 text-yellow-300" />
+                        <span className="text-yellow-300 font-bold">Contest Ends</span>
+                      </div>
+                      <div className="text-white font-bold">
+                        {new Date(currentContest.week_end).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: '2-digit'
+                        })}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      {memes.length} memes submitted
+                    
+                    <div className="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4 text-yellow-300" />
+                        <span className="text-yellow-300 font-bold">Submissions</span>
+                      </div>
+                      <div className="text-white font-bold text-lg">
+                        {memes.length} memes
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Trophy className="w-4 h-4 text-yellow-300" />
+                        <span className="text-yellow-300 font-bold">Rewards</span>
+                      </div>
+                      <div className="text-white font-bold text-sm">
+                        Creators & Voters Win
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -847,12 +951,21 @@ export default function MemesPage() {
                     <CardFooter>
                       <Button
                         variant="outline"
-                        className="w-full hover:bg-red-100 hover:border-red-400 hover:text-red-600 border-2 border-gray-900 font-bold transition-all duration-200 transform hover:scale-105"
+                        className={`w-full border-2 font-bold transition-all duration-200 transform hover:scale-105 ${
+                          userVotes.has(meme.id) 
+                            ? 'bg-red-100 border-red-400 text-red-600 hover:bg-red-200' 
+                            : 'hover:bg-red-100 hover:border-red-400 hover:text-red-600 border-gray-900'
+                        }`}
                         onClick={() => voteForMeme(meme.id)}
-                        disabled={!connected || !walletInfo.canVote || votingLoading === meme.id}
+                        disabled={!connected || !walletInfo.canVote || votingLoading === meme.id || userVotes.has(meme.id)}
                       >
-                        <Heart className="w-5 h-5 mr-2" />
-                        {votingLoading === meme.id ? '⏳ Voting...' : `❤️ Vote (${meme.votes_count})`}
+                        <Heart className={`w-5 h-5 mr-2 ${userVotes.has(meme.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                        {votingLoading === meme.id 
+                          ? '⏳ Voting...' 
+                          : userVotes.has(meme.id)
+                            ? `✅ Voted (${meme.votes_count})`
+                            : `Vote (${meme.votes_count})`
+                        }
                       </Button>
                     </CardFooter>
                   </Card>

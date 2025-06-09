@@ -28,15 +28,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Simple admin check (you should implement proper authentication)
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== 'Bearer admin-token') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { title, message, type, priority, expires_at, image_url, image_path } = await request.json()
 
     // Basic validation
@@ -72,15 +63,6 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Simple admin check (you should implement proper authentication)
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== 'Bearer admin-token') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { id, title, message, type, priority, is_active, expires_at, image_url, image_path } = await request.json()
 
     if (!id) {
@@ -117,15 +99,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Simple admin check (you should implement proper authentication)
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== 'Bearer admin-token') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

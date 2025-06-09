@@ -70,6 +70,7 @@ export default function AnnouncementsPage() {
   // Navigation items matching main site
   const navItems = [
     { name: "Home", href: "/" },
+    { name: "Game", href: "/game" },
     { name: "Announcements", href: "/announcements" },
     { name: "Hackathon", href: "/#hackathon" },
     { name: "Tokenomics", href: "/#tokenomics" },
@@ -329,27 +330,27 @@ export default function AnnouncementsPage() {
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <motion.div 
+        {/* Header */}
+        <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
             <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm border-2 border-gray-900/20 rounded-full px-6 py-3 mb-6 shadow-xl">
               <Megaphone className="w-6 h-6 text-gray-900" />
               <span className="text-lg font-black text-gray-900">OFFICIAL ANNOUNCEMENTS</span>
-            </div>
+          </div>
             <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight" style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}>
               Stay Updated
             </h1>
             <p className="text-xl font-bold text-gray-800 max-w-2xl mx-auto">
               Get the latest news and updates from the Gud Tek team
-            </p>
-          </motion.div>
+          </p>
+        </motion.div>
 
           {/* Filters */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -383,7 +384,7 @@ export default function AnnouncementsPage() {
           </motion.div>
 
           {/* Stats */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -438,22 +439,22 @@ export default function AnnouncementsPage() {
                     {searchTerm || filterType !== 'all' 
                       ? 'Try adjusting your search or filter criteria.' 
                       : 'Check back later for updates from the Gud Tek team!'}
-                  </p>
+            </p>
                 </CardContent>
               </Card>
-            </motion.div>
-          ) : (
+          </motion.div>
+        ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAnnouncements.map((announcement, index) => {
-                const config = typeConfig[announcement.type]
-                const Icon = config.icon
+              const config = typeConfig[announcement.type]
+              const Icon = config.icon
                 const isPriority = announcement.priority <= 3
 
-                return (
-                  <motion.div
-                    key={announcement.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+              return (
+                <motion.div
+                  key={announcement.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
                   >
                     <Card className={`h-full ${config.bgColor} backdrop-blur-sm ${config.borderColor} border-2 hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${isPriority ? 'ring-2 ring-orange-400 shadow-xl' : 'shadow-lg'}`}>
@@ -513,17 +514,17 @@ export default function AnnouncementsPage() {
                             <div className="flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
                               <span className="font-medium">Expires {formatDate(announcement.expires_at)}</span>
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
+                      </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
+          </div>
       </div>
 
       {/* Floating Feedback Button */}

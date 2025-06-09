@@ -1,60 +1,83 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
-import SolanaProvider from '@/components/SolanaProvider'
-import { Toaster } from '@/components/ui/toaster'
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { Providers } from "./providers"
+import { Toaster } from "@/components/ui/toaster"
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true
+})
 
-export const metadata = {
-  title: 'Gud Tek - First BONK Hackathon Winner #1 | Solana Meme Coin',
-  description: 'Gud Tek made history as the first ever BONK hackathon project and #1 winner on hackathon.letsbonk.fun. Revolutionary hackathon-powered BONK tech on Solana blockchain.',
-  keywords: 'Gud Tek, BONK, Solana, cryptocurrency, meme coin, hackathon winner, blockchain, DeFi, crypto trading, hackathon.letsbonk.fun',
-  authors: [{ name: 'Gud Tek Team' }],
-  creator: 'Gud Tek',
-  publisher: 'Gud Tek',
-  robots: 'index, follow',
+export const metadata: Metadata = {
+  metadataBase: new URL('https://gudtek.club'),
+  title: {
+    default: 'GUD TEK | Premium Solana Memecoin | $GUDTEK Token',
+    template: '%s | GUD TEK - Solana Memecoin'
+  },
+  description: 'GUD TEK ($GUDTEK) - The premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump with GUDTEK.',
+  keywords: [
+    'gudtek', 'solana', 'memecoin', 'solana memecoin', 'bonk', 'hackathon', 
+    '$gudtek', 'solana token', 'crypto', 'defi', 'web3', 'blockchain',
+    'solana ecosystem', 'meme token', 'crypto gaming', 'token dodge',
+    'solana gaming', 'crypto community', 'memecoin pump', 'solana pump',
+    'crypto investment', 'solana trading', 'meme coins', 'altcoin',
+    'cryptocurrency', 'digital assets', 'solana network', 'spl token'
+  ],
+  authors: [{ name: 'GUD TEK Team' }],
+  creator: 'GUD TEK',
+  publisher: 'GUD TEK',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'Gud Tek - First BONK Hackathon Winner #1',
-    description: 'Historic achievement: First ever BONK hackathon project and #1 winner. Experience revolutionary hackathon-powered BONK tech on Solana.',
-    url: 'https://gudtek.com',
-    siteName: 'Gud Tek',
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://gudtek.club',
+    siteName: 'GUD TEK',
+    title: 'GUD TEK | Premium Solana Memecoin | $GUDTEK Token',
+    description: 'The premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump with GUDTEK.',
     images: [
       {
-        url: 'https://gudtek.com/images/gudtek-og-image.png',
+        url: '/images/gudtek-og.png',
         width: 1200,
         height: 630,
-        alt: 'Gud Tek - First BONK Hackathon Winner',
-      },
+        alt: 'GUD TEK - Premium Solana Memecoin',
+        type: 'image/png',
+      }
     ],
-    locale: 'en_US',
-    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gud Tek - First BONK Hackathon Winner #1',
-    description: 'Historic achievement: First ever BONK hackathon project and #1 winner on hackathon.letsbonk.fun',
-    creator: '@gudtek',
-    images: ['https://gudtek.com/images/gudtek-og-image.png'],
+    site: '@gudtek_official',
+    creator: '@gudtek_official',
+    title: 'GUD TEK | Premium Solana Memecoin | $GUDTEK Token',
+    description: 'The premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump.',
+    images: ['/images/gudtek-og.png'],
   },
-  icons: {
-    icon: [
-      { url: '/Untitleddesign(5).svg', type: 'image/svg+xml' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' }
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
-    ],
-    shortcut: '/Untitleddesign(5).svg'
-  },
-  manifest: '/site.webmanifest',
   alternates: {
-    canonical: 'https://gudtek.com',
+    canonical: 'https://gudtek.club',
+  },
+  category: 'cryptocurrency',
+  classification: 'Business',
+  other: {
+    'crypto-token': 'GUDTEK',
+    'blockchain': 'Solana',
+    'token-type': 'SPL',
   },
   verification: {
     google: 'your-google-verification-code',
+    yandex: 'your-yandex-verification-code',
   },
-  category: 'Cryptocurrency',
 }
 
 export default function RootLayout({
@@ -63,24 +86,74 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preload" href="/bonk1-bonk-logo.svg" as="image" type="image/svg+xml" />
-        <link rel="preload" href="/Untitleddesign(5).svg" as="image" type="image/svg+xml" />
-        <link rel="preload" href="/x (1).svg" as="image" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#f97316" />
         <meta name="msapplication-TileColor" content="#f97316" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="format-detection" content="telephone=no" />
+        
+        {/* Crypto & Financial Meta Tags */}
+        <meta name="financial-content" content="cryptocurrency, blockchain, tokens" />
+        <meta name="investment-risk" content="high-risk" />
+        <meta name="target-audience" content="crypto enthusiasts, defi users, solana community" />
+        
+        {/* Performance & Technical */}
+        {process.env.NODE_ENV === 'production' && (
+          <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+        )}
+        <meta name="referrer" content="origin-when-cross-origin" />
+        
+        {/* JSON-LD Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "GUD TEK",
+              "alternateName": "GUDTEK",
+              "url": "https://gudtek.club",
+              "logo": "https://gudtek.club/images/gudtek-logo.png",
+              "description": "Premium Solana memecoin for crypto enthusiasts",
+              "foundingDate": "2024",
+              "industry": "Cryptocurrency",
+              "sameAs": [
+                "https://twitter.com/gudtek_official",
+                "https://t.me/gudtek_official"
+              ],
+              "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "GUDTEK Services",
+                "itemListElement": [
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Product",
+                      "name": "GUDTEK Token",
+                      "description": "Premium Solana memecoin token"
+                    }
+                  },
+                  {
+                    "@type": "Offer", 
+                    "itemOffered": {
+                      "@type": "VideoGame",
+                      "name": "Token Dodge Game",
+                      "description": "Play-to-earn crypto game on Solana"
+                    }
+                  }
+                ]
+              }
+            })
+          }}
+        />
       </head>
-      <body className={inter.className}>
-        <SolanaProvider>
-          {children}
-          <Toaster />
-        </SolanaProvider>
+      <body>
+        <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   )

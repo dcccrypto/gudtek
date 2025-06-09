@@ -48,14 +48,12 @@ export default function AdminAnnouncements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const response = await fetch('/api/admin/announcements', {
-        headers: {
-          'Authorization': 'Bearer admin-token'
-        }
-      })
+      const response = await fetch('/api/announcements')
       if (response.ok) {
         const data = await response.json()
         setAnnouncements(data.announcements || [])
+      } else {
+        console.error('Failed to fetch announcements:', response.statusText)
       }
     } catch (error) {
       console.error('Error fetching announcements:', error)
@@ -114,8 +112,7 @@ export default function AdminAnnouncements() {
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer admin-token'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       })
@@ -138,8 +135,7 @@ export default function AdminAnnouncements() {
       const response = await fetch('/api/announcements', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer admin-token'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           id: announcement.id,
@@ -162,10 +158,7 @@ export default function AdminAnnouncements() {
 
     try {
       const response = await fetch(`/api/announcements?id=${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': 'Bearer admin-token'
-        }
+        method: 'DELETE'
       })
 
       if (response.ok) {
@@ -238,8 +231,8 @@ export default function AdminAnnouncements() {
   const getPriorityColor = (priority: number) => {
     if (priority <= 3) return 'text-red-600 bg-red-100 border-red-200'
     if (priority <= 7) return 'text-yellow-600 bg-yellow-100 border-yellow-200'
-    return 'text-green-600 bg-green-100 border-green-200'
-  }
+        return 'text-green-600 bg-green-100 border-green-200'
+    }
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -257,27 +250,27 @@ export default function AdminAnnouncements() {
         {/* Header */}
         <Card className="mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Link 
-                  href="/admin"
-                  className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </Link>
-                <div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/admin"
+                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
                   <CardTitle className="text-3xl font-bold text-gray-900">Manage Announcements</CardTitle>
                   <p className="text-gray-600 mt-1">Create and manage site-wide announcements with images</p>
-                </div>
               </div>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Announcement
-              </Button>
             </div>
+            <Button
+              onClick={() => setShowForm(true)}
+              className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Announcement
+            </Button>
+          </div>
           </CardHeader>
         </Card>
 
@@ -300,8 +293,8 @@ export default function AdminAnnouncements() {
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
-                  </h2>
+                  {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
+                </h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -318,19 +311,19 @@ export default function AdminAnnouncements() {
                       <Label htmlFor="title">Title *</Label>
                       <Input
                         id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                         placeholder="Enter announcement title"
-                        required
+                      required
                         className="mt-1"
-                      />
-                    </div>
+                    />
+                  </div>
 
                     {/* Type and Priority */}
                     <div>
                       <Label htmlFor="type">Type *</Label>
                       <Select 
-                        value={formData.type} 
+                        value={formData.type}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}
                       >
                         <SelectTrigger className="mt-1">
@@ -357,19 +350,19 @@ export default function AdminAnnouncements() {
                         className="mt-1"
                       />
                       <p className="text-xs text-gray-500 mt-1">1 = Highest priority, 10 = Lowest priority</p>
-                    </div>
+                  </div>
 
                     {/* Expiration */}
                     <div className="md:col-span-2">
                       <Label htmlFor="expires_at">Expiration Date (Optional)</Label>
                       <Input
                         id="expires_at"
-                        type="datetime-local"
+                      type="datetime-local"
                         value={formData.expires_at}
                         onChange={(e) => setFormData(prev => ({ ...prev, expires_at: e.target.value }))}
                         className="mt-1"
-                      />
-                    </div>
+                    />
+                  </div>
 
                     {/* Image Upload */}
                     <div className="md:col-span-2">
@@ -385,7 +378,7 @@ export default function AdminAnnouncements() {
                                 className="object-cover"
                               />
                             </div>
-                            <Button
+                    <Button
                               type="button"
                               variant="destructive"
                               size="sm"
@@ -394,7 +387,7 @@ export default function AdminAnnouncements() {
                             >
                               <X className="w-4 h-4 mr-2" />
                               Remove Image
-                            </Button>
+                    </Button>
                           </div>
                         ) : (
                           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
@@ -465,7 +458,7 @@ export default function AdminAnnouncements() {
         </AnimatePresence>
 
         {/* Announcements List */}
-        {isLoading ? (
+          {isLoading ? (
           <Card>
             <CardContent className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -477,12 +470,12 @@ export default function AdminAnnouncements() {
             {announcements.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <Megaphone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <Megaphone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No Announcements</h3>
                   <p className="text-gray-600">Create your first announcement to get started.</p>
                 </CardContent>
               </Card>
-            ) : (
+          ) : (
               announcements.map((announcement, index) => (
                 <motion.div
                   key={announcement.id}
@@ -511,37 +504,37 @@ export default function AdminAnnouncements() {
                             <div className="flex items-center space-x-2">
                               <div className={`p-1 rounded ${getTypeColor(announcement.type)}`}>
                                 {getTypeIcon(announcement.type)}
-                              </div>
+                      </div>
                               <Badge variant="outline" className={getPriorityColor(announcement.priority)}>
                                 Priority: {announcement.priority}
                               </Badge>
                               {!announcement.is_active && (
                                 <Badge variant="secondary">Inactive</Badge>
                               )}
-                            </div>
+                    </div>
                             
                             <div className="flex items-center space-x-2">
                               <Switch
                                 checked={announcement.is_active}
                                 onCheckedChange={() => toggleAnnouncementStatus(announcement)}
                               />
-                              <Button
+                      <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => startEdit(announcement)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
+                        onClick={() => startEdit(announcement)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => deleteAnnouncement(announcement.id)}
+                        onClick={() => deleteAnnouncement(announcement.id)}
                                 className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
 
                           <h3 className="font-semibold text-gray-900 mb-1 truncate">
                             {announcement.title}
@@ -562,14 +555,14 @@ export default function AdminAnnouncements() {
                               {announcement.type}
                             </Badge>
                           </div>
-                        </div>
-                      </div>
+                </div>
+            </div>
                     </CardContent>
                   </Card>
                 </motion.div>
               ))
-            )}
-          </div>
+          )}
+        </div>
         )}
       </div>
     </div>

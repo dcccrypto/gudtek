@@ -4,8 +4,10 @@ import { useState } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { Copy, ExternalLink, TrendingUp, Zap, BarChart3, Users, Rocket, Lock, Flame, DollarSign, Target, CheckCircle, ArrowRight, Trophy, Award, Star, Menu, X, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Script from 'next/script'
 import Link from "next/link"
 import TokenStats from "@/components/TokenStats"
+import SEOFAQSection from "@/components/SEOFAQSection"
 import FeedbackForm from "@/components/FeedbackForm"
 
 
@@ -50,6 +52,7 @@ export default function GudTekLanding() {
 
   const navItems = [
     { name: "Home", href: "#hero" },
+    { name: "Game", href: "/game" },
     { name: "Announcements", href: "/announcements" },
     { name: "Hackathon", href: "#hackathon" },
     { name: "Tokenomics", href: "#tokenomics" },
@@ -60,12 +63,52 @@ export default function GudTekLanding() {
     { name: "About", href: "#about" },
   ]
 
+  // Enhanced Structured Data for Homepage
+  const enhancedStructuredData = {
+    "@context": "https://schema.org",
+    "@type": ["WebSite", "Organization"],
+    "name": "GUD TEK",
+    "alternateName": ["GUDTEK", "$GUDTEK"],
+    "url": "https://gudtek.club",
+    "description": "Premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump with GUDTEK.",
+    "keywords": "gudtek, solana, memecoin, bonk, hackathon, cryptocurrency, defi, web3, blockchain gaming",
+    "inLanguage": "en-US",
+    "sameAs": [
+      "https://twitter.com/gudtek_official",
+      "https://t.me/gudtek_official"
+    ],
+    "about": {
+      "@type": "CryptoCurrency", 
+      "name": "GUDTEK",
+      "alternateName": "$GUDTEK",
+      "description": "Premium Solana memecoin token",
+      "currency": "GUDTEK",
+      "blockchain": "Solana"
+    },
+    "mainEntity": {
+      "@type": "VideoGame",
+      "name": "Token Dodge",
+      "description": "Play-to-earn Solana blockchain game where players collect GUDTEK tokens",
+      "gameCategory": "Arcade",
+      "platform": "Web Browser",
+      "operatingSystem": "Cross Platform"
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://gudtek.club/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+
   return (
     <>
-      {/* Structured Data */}
-      <script
+      {/* Enhanced Structured Data */}
+      <Script
+        id="enhanced-homepage-structured-data"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ 
+          __html: JSON.stringify(enhancedStructuredData) 
+        }}
       />
       
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
@@ -790,6 +833,9 @@ export default function GudTekLanding() {
           </div>
         </section>
 
+        {/* SEO FAQ Section */}
+        <SEOFAQSection />
+
         {/* Footer */}
         <footer className="py-8 px-4 bg-white/20 backdrop-filter backdrop-blur-lg border-t-4 border-orange-400/50">
           <div className="max-w-4xl mx-auto text-center">
@@ -840,18 +886,18 @@ export default function GudTekLanding() {
             <div className="absolute top-full right-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
           </motion.div>
           
-          <motion.button
-            onClick={() => setIsFeedbackOpen(true)}
+        <motion.button
+          onClick={() => setIsFeedbackOpen(true)}
             className="relative bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.5, duration: 0.5 }}
-            aria-label="Open feedback form"
-          >
-            <MessageSquare className="w-6 h-6" />
-          </motion.button>
+          aria-label="Open feedback form"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </motion.button>
         </motion.div>
 
         {/* Feedback Form Modal */}

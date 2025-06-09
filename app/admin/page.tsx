@@ -2,25 +2,28 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { MessageSquare, Megaphone, Image, BarChart3, Users, Settings, Bell, FileText } from "lucide-react"
+import { MessageSquare, Megaphone, Image, BarChart3, Users, Settings, Bell, FileText, Bug, Shield, ArrowLeft, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     totalFeedback: 0,
     newFeedback: 0,
-    activeAnnouncements: 0
+    activeAnnouncements: 0,
+    gameUsers: 0
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch feedback stats
-        const feedbackResponse = await fetch('/api/feedback', {
-          headers: { 'Authorization': 'Bearer admin-token' }
-        })
+        setError(null)
+        
+        // Fetch feedback stats (remove hardcoded auth)
+        const feedbackResponse = await fetch('/api/feedback')
         if (feedbackResponse.ok) {
           const feedbackData = await feedbackResponse.json()
           
@@ -29,15 +32,31 @@ export default function AdminDashboard() {
           if (announcementsResponse.ok) {
             const announcementsData = await announcementsResponse.json()
             
+            // Fetch game stats if available
+            let gameUsers = 0
+            try {
+              const gameResponse = await fetch('/api/admin/game/stats')
+              if (gameResponse.ok) {
+                const gameData = await gameResponse.json()
+                gameUsers = gameData.totalUsers || 0
+              }
+            } catch (gameError) {
+              console.warn('Game stats not available:', gameError)
+            }
+            
             setStats({
               totalFeedback: feedbackData.total || 0,
               newFeedback: feedbackData.newCount || 0,
-              activeAnnouncements: announcementsData.announcements?.length || 0
+              activeAnnouncements: announcementsData.announcements?.length || 0,
+              gameUsers
             })
           }
+        } else {
+          throw new Error('Failed to fetch admin stats')
         }
       } catch (error) {
         console.error('Error fetching admin stats:', error)
+        setError('Failed to load admin statistics. Please refresh the page.')
       } finally {
         setIsLoading(false)
       }
@@ -75,14 +94,22 @@ export default function AdminDashboard() {
       badge: null
     },
     {
-      title: "Analytics",
-      description: "View site analytics and performance",
-      icon: BarChart3,
-      href: "/admin/analytics",
+      title: "Game Administration",
+      description: "Manage Token Dodge game settings and users",
+      icon: Users,
+      href: "/admin/game",
       color: "from-green-500 to-emerald-600",
-      stats: "Coming soon",
-      badge: null,
-      disabled: true
+      stats: `${stats.gameUsers} players`,
+      badge: null
+    },
+    {
+      title: "System Diagnostics",
+      description: "Test Supabase connectivity and debug issues",
+      icon: Bug,
+      href: "/admin/debug",
+      color: "from-red-500 to-orange-600",
+      stats: "Debug tools",
+      badge: null
     }
   ]
 
@@ -95,25 +122,45 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl shadow-xl p-8 mb-8"
         >
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-orange-400 to-yellow-400 rounded-full">
-                <Settings className="w-8 h-8 text-white" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/"
+                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-orange-400 to-yellow-400 rounded-full">
+                    <Shield className="w-8 h-8 text-white" />
+                  </div>
+                  <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
+                </div>
+                <p className="text-gray-600 text-lg">
+                  Welcome to the Gud Tek admin panel. Manage your community and platform.
+                </p>
               </div>
-              <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
             </div>
-            <p className="text-gray-600 text-lg">
-              Welcome to the Gud Tek admin panel. Manage your community and announcements.
-            </p>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <AlertDescription className="text-red-700">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Quick Stats */}
-          {!isLoading && (
+          {!isLoading && !error && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8"
+              className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8"
             >
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white text-center">
                 <div className="text-2xl font-bold">{stats.totalFeedback}</div>
@@ -127,25 +174,33 @@ export default function AdminDashboard() {
                 <div className="text-2xl font-bold">{stats.activeAnnouncements}</div>
                 <div className="text-sm opacity-90">Active Announcements</div>
               </div>
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 text-white text-center">
+                <div className="text-2xl font-bold">{stats.gameUsers}</div>
+                <div className="text-sm opacity-90">Game Players</div>
+              </div>
             </motion.div>
+          )}
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+              <span className="ml-2 text-gray-600">Loading dashboard...</span>
+            </div>
           )}
         </motion.div>
 
         {/* Admin Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {adminCards.map((card, index) => (
             <motion.div
               key={card.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`relative ${card.disabled ? 'opacity-60' : ''}`}
             >
-              <Link
-                href={card.disabled ? '#' : card.href}
-                className={`block ${card.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
+              <Link href={card.href}>
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
                   {/* Card Header */}
                   <div className={`bg-gradient-to-r ${card.color} p-6 text-white relative`}>
                     <div className="flex items-center justify-between">
@@ -178,14 +233,9 @@ export default function AdminDashboard() {
                         <p className="text-gray-600 text-sm">{card.stats}</p>
                       </div>
                       <Button 
-                        className={`${
-                          card.disabled 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : `bg-gradient-to-r ${card.color} hover:shadow-lg transform hover:scale-105`
-                        } text-white transition-all duration-200`}
-                        disabled={card.disabled}
+                        className={`bg-gradient-to-r ${card.color} hover:shadow-lg transform hover:scale-105 text-white transition-all duration-200`}
                       >
-                        {card.disabled ? 'Coming Soon' : 'Manage'}
+                        Manage
                       </Button>
                     </div>
                   </div>
@@ -195,7 +245,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Recent Activity Section */}
+        {/* Quick Actions Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -227,25 +277,26 @@ export default function AdminDashboard() {
             <Link href="/admin/memes">
               <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
                 <Image className="w-4 h-4 mr-2" />
-                Upload Meme
+                Manage Memes
               </Button>
             </Link>
             
-            <Link href="/">
-              <Button className="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white">
-                <FileText className="w-4 h-4 mr-2" />
-                View Site
+            <Link href="/admin/debug">
+              <Button className="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white">
+                <Bug className="w-4 h-4 mr-2" />
+                Debug Tools
               </Button>
             </Link>
           </div>
 
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Admin Notes</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">Admin Guidelines</h3>
             <ul className="text-sm text-gray-600 space-y-1">
               <li>• Check feedback regularly to maintain community engagement</li>
               <li>• Use announcements to communicate important updates</li>
               <li>• Monitor meme submissions for quality and appropriateness</li>
-              <li>• Authentication is currently simplified - implement proper auth for production</li>
+              <li>• Review game analytics for security and performance issues</li>
+              <li>• Use debug tools to test system connectivity and features</li>
             </ul>
           </div>
         </motion.div>

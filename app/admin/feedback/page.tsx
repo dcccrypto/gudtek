@@ -1,41 +1,46 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { MessageSquare, User, Mail, Clock, Eye, ArrowLeft, RefreshCw } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { MessageSquare, User, ArrowLeft, RefreshCw, Clock, Reply, Mail, AlertCircle, Check, Trash2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
-
-interface Feedback {
-  id: string
-  name: string
-  email: string
-  subject: string
-  message: string
-  timestamp: string
-  status: 'new' | 'read' | 'responded'
-}
+import { 
+  markFeedbackAsRead, 
+  addAdminResponse, 
+  deleteFeedback, 
+  type Feedback 
+} from "@/lib/supabase"
 
 export default function AdminFeedback() {
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({ total: 0, newCount: 0 })
+  const [adminResponse, setAdminResponse] = useState('')
+  const [isSubmittingResponse, setIsSubmittingResponse] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchFeedback = async () => {
     try {
-      const response = await fetch('/api/feedback', {
-        headers: {
-          'Authorization': 'Bearer admin-token'
-        }
-      })
+      setError(null)
+      const response = await fetch('/api/feedback')
       if (response.ok) {
         const data = await response.json()
         setFeedback(data.feedback || [])
-        setStats({ total: data.total, newCount: data.newCount })
+        setStats({ total: data.total || 0, newCount: data.newCount || 0 })
+      } else {
+        setError('Failed to fetch feedback. Please try again.')
+        console.error('Failed to fetch feedback:', response.statusText)
       }
     } catch (error) {
       console.error('Error fetching feedback:', error)
+      setError('Connection error. Please check your internet connection.')
     } finally {
       setIsLoading(false)
     }
@@ -45,17 +50,75 @@ export default function AdminFeedback() {
     fetchFeedback()
   }, [])
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'new':
-        return 'text-green-600 bg-green-100 border-green-200'
-      case 'read':
-        return 'text-blue-600 bg-blue-100 border-blue-200'
-      case 'responded':
-        return 'text-purple-600 bg-purple-100 border-purple-200'
-      default:
-        return 'text-gray-600 bg-gray-100 border-gray-200'
+  const handleMarkAsRead = async (feedbackItem: Feedback) => {
+    if (feedbackItem.is_read) return
+
+    try {
+      await markFeedbackAsRead(feedbackItem.id)
+      await fetchFeedback() // Refresh the list
+    } catch (error) {
+      console.error('Error marking feedback as read:', error)
     }
+  }
+
+  const handleSubmitResponse = async () => {
+    if (!selectedFeedback || !adminResponse.trim()) return
+
+    setIsSubmittingResponse(true)
+    try {
+      await addAdminResponse(selectedFeedback.id, adminResponse.trim())
+      setAdminResponse('')
+      await fetchFeedback() // Refresh the list
+      
+      // Update selected feedback
+      setSelectedFeedback(prev => prev ? {
+        ...prev,
+        admin_response: adminResponse.trim(),
+        is_read: true
+      } : null)
+      
+      alert('Response added successfully!')
+    } catch (error) {
+      console.error('Error submitting response:', error)
+      alert('Failed to submit response. Please try again.')
+    } finally {
+      setIsSubmittingResponse(false)
+    }
+  }
+
+  const handleDeleteFeedback = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this feedback?')) return
+
+    try {
+      await deleteFeedback(id)
+      await fetchFeedback() // Refresh the list
+      
+      // Clear selection if deleted item was selected
+      if (selectedFeedback?.id === id) {
+        setSelectedFeedback(null)
+      }
+      
+      alert('Feedback deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting feedback:', error)
+      alert('Failed to delete feedback. Please try again.')
+    }
+  }
+
+  const getStatusColor = (isRead: boolean, hasResponse: boolean) => {
+    if (hasResponse) {
+      return 'text-purple-600 bg-purple-100 border-purple-200'
+    } else if (isRead) {
+      return 'text-blue-600 bg-blue-100 border-blue-200'
+    } else {
+      return 'text-green-600 bg-green-100 border-green-200'
+    }
+  }
+
+  const getStatusText = (isRead: boolean, hasResponse: boolean) => {
+    if (hasResponse) return 'RESPONDED'
+    if (isRead) return 'READ'
+    return 'NEW'
   }
 
   const formatDate = (dateString: string) => {
@@ -104,6 +167,16 @@ export default function AdminFeedback() {
           </div>
         </div>
 
+        {/* Error Alert */}
+        {error && (
+          <Alert className="mb-6 border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AlertDescription className="text-red-700">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Feedback List */}
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -125,11 +198,14 @@ export default function AdminFeedback() {
             ) : (
               <div className="max-h-[600px] overflow-y-auto">
                 {feedback.map((item) => {
-                  const { date, time } = formatDate(item.timestamp)
+                  const { date, time } = formatDate(item.created_at)
                   return (
                     <motion.div
                       key={item.id}
-                      onClick={() => setSelectedFeedback(item)}
+                      onClick={() => {
+                        setSelectedFeedback(item)
+                        handleMarkAsRead(item)
+                      }}
                       className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
                         selectedFeedback?.id === item.id ? 'bg-orange-50 border-orange-200' : ''
                       }`}
@@ -146,8 +222,8 @@ export default function AdminFeedback() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(item.status)}`}>
-                            {item.status.toUpperCase()}
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(item.is_read, !!item.admin_response)}`}>
+                            {getStatusText(item.is_read, !!item.admin_response)}
                           </span>
                           <div className="text-xs text-gray-500 mt-1">
                             {date} at {time}
@@ -182,71 +258,99 @@ export default function AdminFeedback() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">{selectedFeedback.subject}</h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(selectedFeedback.status)}`}>
-                        {selectedFeedback.status.toUpperCase()}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(selectedFeedback.is_read, !!selectedFeedback.admin_response)}`}>
+                        {getStatusText(selectedFeedback.is_read, !!selectedFeedback.admin_response)}
                       </span>
                     </div>
                   </div>
-                  <div className="text-right text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{formatDate(selectedFeedback.timestamp).date}</span>
-                    </div>
-                    <div>{formatDate(selectedFeedback.timestamp).time}</div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteFeedback(selectedFeedback.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
 
-                {/* User Info */}
+                {/* Contact Info */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-900">{selectedFeedback.name}</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Name</label>
+                      <p className="text-sm font-medium text-gray-900">{selectedFeedback.name}</p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4 text-gray-600" />
-                      <a 
-                        href={`mailto:${selectedFeedback.email}?subject=Re: ${selectedFeedback.subject}`}
-                        className="text-orange-600 hover:text-orange-700 underline"
-                      >
-                        {selectedFeedback.email}
-                      </a>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</label>
+                      <p className="text-sm font-medium text-gray-900">{selectedFeedback.email}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</label>
+                    <div className="flex items-center space-x-1 text-sm text-gray-900">
+                      <Clock className="w-4 h-4" />
+                      <span>{formatDate(selectedFeedback.created_at).date} at {formatDate(selectedFeedback.created_at).time}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Message */}
                 <div className="mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Message</h4>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Message</label>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">
-                      {selectedFeedback.message}
-                    </p>
+                    <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">{selectedFeedback.message}</p>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="space-y-3">
+                {/* Existing Admin Response */}
+                {selectedFeedback.admin_response && (
+                  <div className="mb-6">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Your Response</label>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-2">
+                        <Check className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">{selectedFeedback.admin_response}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Response Form */}
+                <div className="space-y-4">
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {selectedFeedback.admin_response ? 'Update Response' : 'Add Response'}
+                  </label>
+                  <Textarea
+                    value={adminResponse}
+                    onChange={(e) => setAdminResponse(e.target.value)}
+                    placeholder="Type your response here..."
+                    className="min-h-[120px]"
+                  />
                   <Button
-                    onClick={() => window.open(`mailto:${selectedFeedback.email}?subject=Re: ${selectedFeedback.subject}&body=Hi ${selectedFeedback.name},%0D%0A%0D%0AThank you for your feedback regarding "${selectedFeedback.subject}".%0D%0A%0D%0A`)}
+                    onClick={handleSubmitResponse}
+                    disabled={!adminResponse.trim() || isSubmittingResponse}
                     className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white"
                   >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Reply via Email
+                    {isSubmittingResponse ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Reply className="w-4 h-4 mr-2" />
+                        {selectedFeedback.admin_response ? 'Update Response' : 'Send Response'}
+                      </>
+                    )}
                   </Button>
-                  
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500">
-                      Clicking "Reply via Email" will open your default email client with a pre-filled response.
-                    </p>
-                  </div>
                 </div>
               </div>
             ) : (
               <div className="p-8 text-center">
-                <Eye className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Select a feedback message from the list to view details and respond.</p>
+                <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Select a feedback message to view details and respond.</p>
               </div>
             )}
           </div>
