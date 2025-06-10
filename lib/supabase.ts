@@ -399,7 +399,7 @@ export const getOrCreateGameUser = async (walletAddress: string, tokenBalance: n
         .insert([{
           wallet_address: walletAddress,
           token_balance: tokenBalance,
-          is_verified: tokenBalance >= parseFloat(await getGameSetting('min_token_balance') || '1000'),
+          is_verified: tokenBalance >= parseFloat(await getGameSetting('min_token_balance') || '10000'),
           last_balance_check: new Date().toISOString()
         }])
         .select()
@@ -438,7 +438,7 @@ export const getOrCreateGameUser = async (walletAddress: string, tokenBalance: n
 
 export const updateUserTokenBalance = async (walletAddress: string, balance: number) => {
   try {
-    const minBalance = parseFloat(await getGameSetting('min_token_balance') || '1000')
+    const minBalance = parseFloat(await getGameSetting('min_token_balance') || '10000')
     
     const { data, error } = await supabase
       .from('game_users')

@@ -69,7 +69,7 @@ export default function GameAdminPage() {
   })
   
   const [settings, setSettings] = useState<GameSettings>({
-    min_token_balance: '1000',
+    min_token_balance: '10000',
     game_enabled: 'true',
     max_score_per_session: '10000',
     leaderboard_size: '100',

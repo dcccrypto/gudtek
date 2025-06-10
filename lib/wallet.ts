@@ -8,7 +8,7 @@ import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana
 export const GUDTEK_TOKEN_MINT = new PublicKey('5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk')
 
 // Minimum balance required for voting/submitting (in token units)
-export const MIN_GUDTEK_BALANCE = 1000 // 1000 $GUDTEK tokens minimum
+export const MIN_GUDTEK_BALANCE = 10000 // 10,000 $GUDTEK tokens minimum
 
 export interface WalletState {
   connected: boolean

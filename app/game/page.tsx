@@ -181,6 +181,13 @@ export default function GamePage() {
   const gameLoopRef = useRef<number>()
   const [mounted, setMounted] = useState(false)
   
+  // Contest timing state
+  const [contestInfo, setContestInfo] = useState({
+    isFirst24Hours: true,
+    timeRemaining: '',
+    nextAirdropDate: '18/06/2025'
+  })
+  
   // Sound effects state - initialize from localStorage
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -402,6 +409,60 @@ export default function GamePage() {
     }
   }, [highScore])
 
+  // Contest timing logic
+  useEffect(() => {
+    const updateContestTimer = () => {
+      // Set the contest start time (you can adjust this to when you want the 24h contest to start)
+      // 
+      // FOR PRODUCTION: Replace the line below with your actual contest start time
+      // Example: const contestStartTime = new Date('2025-01-24T00:00:00.000Z').getTime()
+      // 
+      // For testing: set to current time minus some hours to see the countdown
+      const contestStartTime = Date.now() - (20 * 60 * 60 * 1000) // Started 20 hours ago for demo (4h left)
+      const currentTime = Date.now()
+      const contestEndTime = contestStartTime + (24 * 60 * 60 * 1000) // 24 hours from start
+      const timeLeftMs = contestEndTime - currentTime
+      
+      if (timeLeftMs > 0) {
+        // Still in first 24 hours - calculate remaining time
+        const totalSecondsLeft = Math.floor(timeLeftMs / 1000)
+        const hoursLeft = Math.floor(totalSecondsLeft / 3600)
+        const minutesLeft = Math.floor((totalSecondsLeft % 3600) / 60)
+        const secondsLeft = totalSecondsLeft % 60
+        
+        let timeDisplay = ''
+        if (hoursLeft > 0) {
+          timeDisplay = `${hoursLeft}h ${minutesLeft}m`
+        } else if (minutesLeft > 0) {
+          timeDisplay = `${minutesLeft}m ${secondsLeft}s`
+        } else {
+          timeDisplay = `${secondsLeft}s`
+        }
+        
+        setContestInfo({
+          isFirst24Hours: true,
+          timeRemaining: timeDisplay,
+          nextAirdropDate: '18/06/2025'
+        })
+      } else {
+        // Contest has ended - switch to weekly contest
+        setContestInfo({
+          isFirst24Hours: false,
+          timeRemaining: '',
+          nextAirdropDate: '18/06/2025'
+        })
+      }
+    }
+
+    // Update immediately
+    updateContestTimer()
+    
+    // Update every 30 seconds - more reasonable interval
+    const timer = setInterval(updateContestTimer, 30000)
+    
+    return () => clearInterval(timer)
+  }, [])
+
   useEffect(() => {
     setMounted(true)
     loadLeaderboard()
@@ -460,7 +521,7 @@ export default function GamePage() {
   // Load leaderboard
   const loadLeaderboard = async () => {
     try {
-      const response = await fetch('/api/game/leaderboard?limit=20')
+      const response = await fetch('/api/game/leaderboard?limit=10')
       const data = await response.json()
       if (data.success) {
         setLeaderboard(data.leaderboard)
@@ -1961,29 +2022,116 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
             </motion.div>
           )}
 
-          {/* Weekly Airdrop Banner - Most Important Information */}
-          <Card className="mb-8 bg-gradient-to-r from-purple-600 to-blue-600 border-2 border-yellow-400 shadow-2xl">
+          {/* Dynamic Contest Banner */}
+          <Card className={`mb-8 border-2 border-yellow-400 shadow-xl ${
+            contestInfo.isFirst24Hours 
+              ? 'bg-gradient-to-r from-red-600 to-orange-600' 
+              : 'bg-gradient-to-r from-purple-600 to-blue-600'
+          }`}>
             <CardContent className="p-6">
               <div className="grid md:grid-cols-3 gap-6 items-center text-white">
-                <div className="text-center">
-                  <div className="text-2xl font-bold mb-2">Weekly $GUDTEK Airdrops</div>
-                  <div className="text-sm opacity-90">Every Monday we select winners</div>
-                </div>
+                                  <div className="text-center">
+                    <div className="text-2xl font-bold mb-2">
+                      {contestInfo.isFirst24Hours ? '🔥 24-Hour Launch Contest!' : 'Weekly $GUDTEK Airdrops'}
+                    </div>
+                    <div className="text-sm opacity-90">
+                      {contestInfo.isFirst24Hours 
+                        ? 'Get ready for exclusive launch rewards!' 
+                        : 'Every Monday we select winners'
+                      }
+                    </div>
+                  </div>
                 <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="bg-white/10 rounded-lg p-3 backdrop-blur">
+                  <div className="bg-white/15 rounded-lg p-3 backdrop-blur">
                     <div className="text-lg font-bold text-yellow-300">#1 Player</div>
                     <div className="text-sm">Guaranteed Winner</div>
                   </div>
-                  <div className="bg-white/10 rounded-lg p-3 backdrop-blur">
-                    <div className="text-lg font-bold text-green-300">Top 20</div>
+                  <div className="bg-white/15 rounded-lg p-3 backdrop-blur">
+                    <div className="text-lg font-bold text-green-300">Top 10</div>
                     <div className="text-sm">4 Random Winners</div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-yellow-300 mb-1">Win Real $GUDTEK</div>
-                  <div className="text-sm opacity-90">Higher scores = better chances</div>
+                  <div className="text-xl font-bold text-yellow-300 mb-1">
+                    {contestInfo.isFirst24Hours ? 'Launch Rewards!' : 'Win Real $GUDTEK'}
+                  </div>
+                  <div className="text-sm opacity-90">
+                    {contestInfo.isFirst24Hours 
+                      ? 'Extra prizes for first 24h!' 
+                      : `Next airdrop: ${contestInfo.nextAirdropDate}`
+                    }
+                  </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+
+
+          {/* Global Leaderboard - Prominent Position */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 mb-6">
+            <CardHeader>
+              <CardTitle className="text-gray-900 flex items-center justify-center gap-3 text-2xl">
+                <Trophy className="w-8 h-8" />
+                🏆 Global Leaderboard - Top 10 Champions
+              </CardTitle>
+              <p className="text-center text-gray-700 mt-1">
+                {contestInfo.isFirst24Hours 
+                  ? '24-hour contest winners selected from top performers' 
+                  : 'Weekly winners selected from these top performers'
+                }
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                {leaderboard.slice(0, 10).map((entry, index) => (
+                  <div
+                    key={index}
+                    className={`flex flex-col items-center justify-center p-4 rounded-lg shadow-md transition-all duration-200 hover:scale-105 ${
+                      index < 3 ? 'bg-gradient-to-br from-yellow-400/30 to-orange-400/30 border-2 border-yellow-500/50' : 'bg-white/15 border border-white/30'
+                    }`}
+                  >
+                    <div className="text-center mb-2">
+                      {index < 3 ? (
+                        <div className="relative mb-2">
+                          <Crown className={`w-8 h-8 mx-auto ${
+                            index === 0 ? 'text-yellow-500' :
+                            index === 1 ? 'text-gray-400' :
+                            'text-orange-500'
+                          }`} />
+                          <span className="absolute -top-1 -right-1 bg-gray-900 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                            {index + 1}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-gray-500/30 rounded-full flex items-center justify-center text-gray-600 font-bold mx-auto mb-2">
+                          {index + 1}
+                        </div>
+                      )}
+                      <div className="font-bold text-sm text-gray-900 truncate">{entry.username}</div>
+                      <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
+                        {entry.isVerified && (
+                          <Shield className="w-3 h-3 text-green-600" title="Verified $GUDTEK Holder" />
+                        )}
+                        🎮 {entry.totalGames}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-mono font-black text-lg text-gray-900">{entry.totalScore.toLocaleString()}</div>
+                      <div className="text-xs text-gray-600 font-medium">Total Score</div>
+                      <div className="text-xs text-gray-600 flex items-center justify-center gap-1 mt-1">
+                        🏆 <span className="font-mono">{entry.highScore.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {leaderboard.length === 0 && (
+                <div className="text-center py-8 text-gray-600">
+                  <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No scores yet. Be the first to play!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -2262,7 +2410,6 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                         
                         {gameState.gameRunning && !gameOver && (
                           <div className="text-center">
-                            <p className="text-sm text-gray-700 mb-2">Game Running! Use Arrow Keys or WASD to move</p>
                             <Button 
                               onClick={() => {
                                 setGameState(prev => ({ ...prev, gameRunning: false }))
@@ -2440,49 +2587,7 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                 </Card>
               )}
 
-              {/* Leaderboard */}
-              <Card className="backdrop-blur-md bg-white/10 border-white/20">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 flex items-center gap-2">
-                    <Trophy className="w-5 h-5" />
-                    Leaderboard
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {leaderboard.slice(0, 10).map((entry, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2 rounded bg-white/5 text-gray-900"
-                    >
-                      <div className="flex items-center gap-3">
-                        {index < 3 ? (
-                          <Crown className={`w-5 h-5 ${
-                            index === 0 ? 'text-yellow-600' :
-                            index === 1 ? 'text-gray-600' :
-                            'text-orange-600'
-                          }`} />
-                        ) : (
-                          <span className="w-5 text-center text-gray-600">#{index + 1}</span>
-                        )}
-                        <div>
-                          <div className="font-medium">{entry.username}</div>
-                          <div className="text-xs text-gray-600">{entry.totalGames} games</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-mono font-bold text-lg">{entry.totalScore}</div>
-                        <div className="text-xs text-gray-600">Total Score</div>
-                        <div className="text-xs text-gray-600 flex items-center gap-1 justify-end">
-                          🏆 {entry.highScore}
-                        </div>
-                        {entry.isVerified && (
-                          <Shield className="w-3 h-3 text-green-600 inline-block mt-1" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+
 
 
             </div>

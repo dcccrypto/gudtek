@@ -745,7 +745,7 @@ export default function GudTekLanding() {
                 Connect with fellow Gud Tek holders, get latest updates, share memes, and experience the best of BONK tech on Solana
               </p>
 
-              <div className="max-w-md mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="bg-white rounded-2xl p-8 shadow-xl border-4 border-gray-900"
@@ -773,11 +773,45 @@ export default function GudTekLanding() {
                     Join Community
                   </Button>
                 </motion.div>
+
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white rounded-2xl p-8 shadow-xl border-4 border-gray-900"
+                >
+                  {/* Telegram Logo */}
+                  <div className="text-6xl mb-6 flex justify-center" aria-hidden="true">
+                    <svg 
+                      width="64" 
+                      height="64" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="text-blue-500"
+                    >
+                      <path 
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" 
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-4">Join Telegram</h3>
+                  <p className="text-gray-600 mb-6 text-lg">
+                    Connect with our active Telegram community for instant updates, discussions, and direct support
+                  </p>
+                  <Button
+                    onClick={() => window.open("https://t.me/gudtekclub", "_blank")}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-blue-400"
+                    aria-label="Join Gud Tek community on Telegram"
+                  >
+                    <ExternalLink className="mr-2" aria-hidden="true" />
+                    Join Telegram
+                  </Button>
+                </motion.div>
               </div>
 
               {/* Featured Tweet Preview */}
               <div className="mt-12 max-w-2xl mx-auto">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Latest from Gud Tek</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">The Original Post</h3>
                 <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-gray-900">
                   <img
                     src="/images/tweet-screenshot.png"

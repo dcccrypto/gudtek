@@ -5,56 +5,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
-import Script from 'next/script'
 
 const faqs = [
   {
-    id: 'what-is-gudtek-solana',
-    question: 'What is GUDTEK and why is it the best Solana memecoin?',
-    answer: 'GUDTEK ($GUDTEK) is a premium Solana memecoin designed for crypto enthusiasts. Built on the high-performance Solana blockchain, GUDTEK offers lightning-fast transactions, minimal fees, and an engaging gaming ecosystem with Token Dodge. Our community-driven approach and innovative play-to-earn mechanics make GUDTEK stand out in the crowded memecoin space.',
-    keywords: ['gudtek', 'solana memecoin', 'best solana token', 'crypto community']
+    id: 'what-is-gudtek',
+    question: 'What is Gud Tek?',
+    answer: 'Gud Tek is the #1 winner of the first BONK hackathon on Solana. We\'re a community-driven project that combines gaming with DeFi, featuring our Token Dodge game and $GUDTEK token.'
   },
   {
-    id: 'how-to-buy-gudtek-solana',
-    question: 'How do I buy GUDTEK tokens on Solana?',
-    answer: 'To buy GUDTEK tokens: 1) Set up a Solana wallet (Phantom, Solflare, or Backpack), 2) Fund your wallet with SOL, 3) Connect to a Solana DEX like Jupiter or Raydium, 4) Swap SOL for GUDTEK tokens using our contract address. Always verify the official contract address on our website to avoid scams.',
-    keywords: ['buy gudtek', 'solana dex', 'how to buy solana tokens', 'phantom wallet']
+    id: 'how-to-play-game',
+    question: 'How do I play the Token Dodge game?',
+    answer: 'Connect your wallet, hold minimum $GUDTEK tokens, then visit the Game page. Use arrow keys or WASD to move your character, collect tokens, and avoid obstacles. Top weekly players get airdrops!'
   },
   {
-    id: 'token-dodge-game-solana',
-    question: 'What is Token Dodge and how does it work?',
-    answer: 'Token Dodge is our signature play-to-earn game where players collect GUDTEK tokens while avoiding crypto scams and obstacles. Built on Solana for instant gameplay, players need to hold minimum GUDTEK tokens to play. Weekly airdrops reward top performers, making it both fun and profitable for our community.',
-    keywords: ['token dodge game', 'play to earn solana', 'crypto gaming', 'solana game']
+    id: 'wallet-requirements',
+    question: 'What do I need to participate?',
+    answer: 'You need a Solana wallet (like Phantom) with some $GUDTEK tokens. Different activities have different requirements - check the specific minimums on each page.'
   },
   {
-    id: 'solana-vs-ethereum-memecoins',
-    question: 'Why choose Solana memecoins over Ethereum memecoins?',
-    answer: 'Solana memecoins like GUDTEK offer several advantages: ultra-low transaction fees (under $0.01), lightning-fast confirmations (under 1 second), better scalability, and an active DeFi ecosystem. Unlike Ethereum where gas fees can be $50+, Solana enables micro-transactions perfect for gaming and frequent trading.',
-    keywords: ['solana vs ethereum', 'solana advantages', 'low fees crypto', 'fast blockchain']
+    id: 'how-to-buy',
+    question: 'How do I buy $GUDTEK tokens?',
+    answer: 'Get SOL in your Solana wallet, then swap it for $GUDTEK on Jupiter DEX or other Solana exchanges. Our contract address is available on the main page.'
   },
   {
-    id: 'gudtek-tokenomics-supply',
-    question: 'What are GUDTEK tokenomics and total supply?',
-    answer: 'GUDTEK features a deflationary tokenomics model with a fixed total supply. Our transparent token distribution includes community rewards, gaming incentives, liquidity provisions, and development funds. Check our real-time supply data via our API endpoints and verify all information on Solana blockchain explorers.',
-    keywords: ['gudtek tokenomics', 'token supply', 'deflationary crypto', 'solana token stats']
+    id: 'community-participation',
+    question: 'How can I join the community?',
+    answer: 'Join our Telegram and follow us on X (Twitter) for updates, discussions, and community events. Links are in the Community section.'
   },
   {
-    id: 'solana-memecoin-community',
-    question: 'How do I join the GUDTEK community?',
-    answer: 'Join our vibrant community on Telegram and Twitter for the latest updates, memes, trading discussions, and exclusive events. Participate in our weekly game competitions, share your victories, and connect with fellow Solana enthusiasts. Our community is the heart of GUDTEK ecosystem.',
-    keywords: ['crypto community', 'solana community', 'telegram crypto', 'twitter crypto']
-  },
-  {
-    id: 'solana-wallet-setup',
-    question: 'Which Solana wallet should I use for GUDTEK?',
-    answer: 'We recommend Phantom (mobile & browser), Solflare (advanced features), or Backpack (newest). All support GUDTEK tokens and our Token Dodge game. Ensure you backup your seed phrase securely and never share it. Always download wallets from official sources to avoid malware.',
-    keywords: ['solana wallet', 'phantom wallet', 'solflare wallet', 'crypto wallet security']
-  },
-  {
-    id: 'gudtek-roadmap-future',
-    question: 'What\'s next for GUDTEK? Future roadmap?',
-    answer: 'Our roadmap includes expanding the gaming ecosystem, additional play-to-earn mechanics, cross-chain bridges, NFT integration, and partnerships with major Solana projects. We\'re building the ultimate memecoin gaming platform that combines entertainment with real rewards.',
-    keywords: ['crypto roadmap', 'solana gaming future', 'nft integration', 'cross chain']
+    id: 'meme-contests',
+    question: 'What are the meme contests?',
+    answer: 'Weekly meme competitions where community members submit and vote on memes. Winners get $GUDTEK rewards. You need minimum tokens to vote and submit.'
   }
 ]
 
@@ -69,133 +50,109 @@ export default function SEOFAQSection() {
     )
   }
 
-  // FAQ Schema for SEO
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": faq.answer
-      }
-    }))
-  }
-
   return (
-    <>
-      <Script
-        id="faq-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema)
-        }}
-      />
-      
-      <section id="faq" className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm border-2 border-gray-900/20 rounded-full px-6 py-3 mb-6 shadow-xl">
-              <HelpCircle className="w-6 h-6 text-gray-900" />
-              <span className="text-lg font-black text-gray-900">FREQUENTLY ASKED QUESTIONS</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
-              Everything About GUDTEK
-            </h2>
-            <p className="text-xl text-gray-800 max-w-2xl mx-auto">
-              Your complete guide to Solana's premium memecoin ecosystem
-            </p>
-          </motion.div>
-
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <motion.div
-                key={faq.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Card className="bg-white/20 backdrop-blur-lg border-2 border-gray-900/20 hover:border-gray-900/40 transition-all duration-300">
-                  <CardHeader className="pb-2">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-0 h-auto text-left hover:bg-transparent"
-                      onClick={() => toggleItem(faq.id)}
-                    >
-                      <CardTitle className="text-lg font-bold text-gray-900 pr-4">
-                        {faq.question}
-                      </CardTitle>
-                      {openItems.includes(faq.id) ? (
-                        <ChevronUp className="w-5 h-5 text-gray-900 flex-shrink-0" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-900 flex-shrink-0" />
-                      )}
-                    </Button>
-                  </CardHeader>
-                  
-                  {openItems.includes(faq.id) && (
-                    <CardContent className="pt-0">
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-gray-800 font-medium leading-relaxed"
-                      >
-                        {faq.answer}
-                      </motion.div>
-                    </CardContent>
-                  )}
-                </Card>
-              </motion.div>
-            ))}
+    <section className="py-16 px-4 bg-gradient-to-br from-gray-100 to-gray-200 relative">
+      <div className="max-w-3xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-full px-6 py-3 mb-6 shadow-lg">
+            <HelpCircle className="w-5 h-5 text-gray-700" />
+            <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">FAQ</span>
           </div>
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-lg text-gray-700">
+            Quick answers to common questions about Gud Tek
+          </p>
+        </motion.div>
 
-          {/* Call to Action */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-center mt-12"
-          >
-            <Card className="bg-gradient-to-r from-purple-600 to-blue-600 border-4 border-yellow-400 shadow-2xl">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-black text-white mb-4">
-                  Still Have Questions?
-                </h3>
-                <p className="text-white/90 mb-6">
-                  Join our community for instant answers and the latest GUDTEK updates!
-                </p>
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <Button 
-                    asChild
-                    className="bg-white text-purple-600 hover:bg-gray-100 font-bold"
+        <div className="space-y-4">
+          {faqs.map((faq, index) => (
+            <motion.div
+              key={faq.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className="bg-white border border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-0 h-auto text-left hover:bg-transparent"
+                    onClick={() => toggleItem(faq.id)}
                   >
-                    <a href="https://t.me/gudtek_official" target="_blank" rel="noopener noreferrer">
-                      Join Telegram
-                    </a>
+                    <CardTitle className="text-lg font-semibold text-gray-900 pr-4">
+                      {faq.question}
+                    </CardTitle>
+                    {openItems.includes(faq.id) ? (
+                      <ChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                    )}
                   </Button>
-                  <Button 
-                    asChild
-                    variant="outline"
-                    className="border-white text-white hover:bg-white hover:text-purple-600 font-bold"
-                  >
-                    <a href="https://twitter.com/gudtek_official" target="_blank" rel="noopener noreferrer">
-                      Follow Twitter
-                    </a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardHeader>
+                
+                {openItems.includes(faq.id) && (
+                  <CardContent className="pt-0">
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-gray-700 leading-relaxed"
+                    >
+                      {faq.answer}
+                    </motion.div>
+                  </CardContent>
+                )}
+              </Card>
+            </motion.div>
+          ))}
         </div>
-      </section>
-    </>
+
+        {/* Simple CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="text-center mt-12"
+        >
+          <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 border-0 shadow-xl">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Still have questions?
+              </h3>
+              <p className="text-white/90 mb-6">
+                Join our community for help and updates!
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Button 
+                  asChild
+                  className="bg-white text-orange-600 hover:bg-gray-100 font-semibold"
+                >
+                  <a href="https://t.me/gudtekclub" target="_blank" rel="noopener noreferrer">
+                    Join Telegram
+                  </a>
+                </Button>
+                <Button 
+                  asChild
+                  variant="outline"
+                  className="border-white text-white hover:bg-white hover:text-orange-600 font-semibold"
+                >
+                  <a href="https://x.com/i/communities/1930994127895703976" target="_blank" rel="noopener noreferrer">
+                    Follow X
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </section>
   )
 } 

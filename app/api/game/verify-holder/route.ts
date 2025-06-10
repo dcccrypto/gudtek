@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const tokenBalance = await verifyTokenBalance(walletAddress)
     
     // Get minimum required balance
-    const minBalance = parseFloat(await getGameSetting('min_token_balance') || '1000')
+    const minBalance = parseFloat(await getGameSetting('min_token_balance') || '10000')
     
     // Get or create user in our database
     const user = await getOrCreateGameUser(walletAddress, tokenBalance)

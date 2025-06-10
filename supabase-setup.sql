@@ -183,7 +183,7 @@ ON CONFLICT DO NOTHING;
 
 -- Insert default game settings
 INSERT INTO game_settings (setting_key, setting_value, description) VALUES
-  ('min_token_balance', '1000', 'Minimum token balance required to play'),
+  ('min_token_balance', '10000', 'Minimum token balance required to play'),
   ('game_enabled', 'true', 'Whether the game is currently enabled'),
   ('max_score_per_session', '10000', 'Maximum score allowed per session (anti-cheat)'),
   ('leaderboard_size', '100', 'Number of top players to show in leaderboard'),

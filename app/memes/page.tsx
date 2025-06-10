@@ -76,36 +76,26 @@ export default function MemesPage() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        console.log('🚀 Initializing meme gallery...')
-        
         // Set a maximum initialization time
         const initTimeout = setTimeout(() => {
-          console.warn('⏰ Initialization taking too long, forcing load complete')
           setLoading(false)
-        }, 15000) // 15 second fallback
+        }, 10000) // 10 second fallback
         
         // Load data in parallel
         await Promise.allSettled([
           loadMemes(),
           loadCurrentContest(),
           // Test Helius RPC connection
-          typeof window !== 'undefined' ? testConnection().then(connected => {
-            if (connected) {
-              console.log('✅ Successfully connected to Helius premium RPC')
-            } else {
-              console.warn('⚠️ Failed to connect to Helius RPC')
-            }
-          }) : Promise.resolve()
+          typeof window !== 'undefined' ? testConnection() : Promise.resolve()
         ])
         
         clearTimeout(initTimeout)
-        console.log('🎉 App initialization complete')
       } catch (error) {
-        console.error('💥 Critical error during initialization:', error)
+        console.error('Error during initialization:', error)
         setLoading(false) // Ensure we exit loading state
         toast({
-          title: "Initialization Error",
-          description: "Something went wrong. Please refresh the page.",
+          title: "Connection Error",
+          description: "Please refresh the page to try again.",
           variant: "destructive",
         })
       }
@@ -160,11 +150,9 @@ export default function MemesPage() {
 
   const loadMemes = async () => {
     try {
-      console.log('🔄 Starting to load memes...')
-      
       // Add a timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
+        setTimeout(() => reject(new Error('Request timeout')), 8000)
       )
       
       const queryPromise = supabase
@@ -177,7 +165,6 @@ export default function MemesPage() {
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
 
       if (error) {
-        console.error('Supabase error:', error)
         throw error
       }
       
@@ -186,7 +173,6 @@ export default function MemesPage() {
         await loadUserVotes(data.map((m: Meme) => m.id))
       }
       
-      console.log('✅ Memes loaded successfully:', data?.length || 0, 'memes')
       setMemes(data || [])
     } catch (error) {
       console.error('Error loading memes:', error)
@@ -195,68 +181,47 @@ export default function MemesPage() {
       setMemes([])
       
       toast({
-        title: "Connection Issue",
+        title: "Loading Error",
         description: "Failed to load memes. Please refresh the page.",
         variant: "destructive",
       })
     } finally {
-      console.log('✅ Setting loading to false')
       setLoading(false)
     }
   }
 
   const loadUserVotes = async (memeIds: string[]) => {
-    if (!connected || !publicKey || memeIds.length === 0) {
-      setUserVotes(new Set())
-      return
-    }
+    if (!publicKey) return
 
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('votes')
         .select('meme_id')
         .eq('voter_wallet', publicKey.toString())
         .in('meme_id', memeIds)
 
-      if (error) throw error
-
-      const votedMemeIds = new Set(data.map(vote => vote.meme_id))
+      const votedMemeIds = new Set(data?.map(vote => vote.meme_id) || [])
       setUserVotes(votedMemeIds)
-      console.log('✅ User votes loaded:', votedMemeIds.size)
     } catch (error) {
       console.error('Error loading user votes:', error)
-      setUserVotes(new Set())
     }
   }
 
   const loadCurrentContest = async () => {
     try {
-      console.log('🔄 Loading current contest...')
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Contest query timeout')), 5000)
-      )
-      
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('weekly_contests')
         .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('is_active', true)
+        .single()
 
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any
-
-      if (error) {
-        console.error('Contest query error:', error)
+      if (error && error.code !== 'PGRST116') {
         throw error
       }
       
-      console.log('✅ Contest loaded:', data?.[0] ? 'Active contest found' : 'No active contest')
-      setCurrentContest(data?.[0] || null)
+      setCurrentContest(data || null)
     } catch (error) {
       console.error('Error loading contest:', error)
-      // Don't show toast for contest errors, it's not critical
-      setCurrentContest(null)
     }
   }
 
@@ -311,12 +276,7 @@ export default function MemesPage() {
       return
     }
 
-    // Debug current state
-    console.log('Submit validation:', { 
-      title: newMeme.title, 
-      imageUrl: newMeme.imageUrl, 
-      imagePath: newMeme.imagePath 
-    })
+
 
     if (!newMeme.title?.trim()) {
       toast({
@@ -473,26 +433,88 @@ export default function MemesPage() {
           <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
         </div>
         
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="w-32 h-32 border-4 border-gray-900 border-t-transparent rounded-full mx-auto mb-4"
-            />
-            <p className="text-2xl font-bold text-gray-900">Loading Gud Tek Memes...</p>
-            <p className="text-sm text-gray-700 mt-2">
-              Check browser console for debugging info
-            </p>
-            
-            {/* Debug info in development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 text-xs text-gray-600 max-w-md mx-auto">
-                <p>🔗 Connecting to Helius RPC...</p>
-                <p>📊 Loading memes from Supabase...</p>
-                <p>🏆 Loading contest data...</p>
+        {/* Skeleton Navbar */}
+        <nav className="fixed top-0 left-0 right-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <div className="h-8 w-8 bg-gray-300 rounded-full animate-pulse mr-2" />
+                <div className="h-6 w-20 bg-gray-300 rounded animate-pulse" />
               </div>
-            )}
+              <div className="hidden md:flex space-x-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-4 w-16 bg-gray-300 rounded animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div className="pt-16 relative z-10">
+          {/* Skeleton Hero */}
+          <div className="relative min-h-[40vh] flex flex-col items-center justify-center px-4 text-center">
+            <div className="relative z-20">
+              <div className="mb-4 mt-4">
+                <div className="bg-white/20 backdrop-blur-sm border border-gray-300 rounded-xl p-3 shadow-xl max-w-md mx-auto">
+                  <div className="h-4 w-3/4 bg-gray-300 rounded animate-pulse mx-auto mb-2" />
+                  <div className="h-3 w-1/2 bg-gray-300 rounded animate-pulse mx-auto" />
+              </div>
+          </div>
+              
+              <div className="h-16 w-80 bg-gray-300 rounded animate-pulse mx-auto mb-4" />
+              <div className="h-6 w-96 bg-gray-300 rounded animate-pulse mx-auto mb-8" />
+              
+              {/* Skeleton Wallet Section */}
+              <div className="bg-white/20 backdrop-filter backdrop-blur-lg border-2 border-gray-900/20 rounded-xl p-6 max-w-2xl mx-auto shadow-lg mb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-center sm:text-left">
+                    <div className="h-4 w-32 bg-gray-300 rounded animate-pulse mb-2" />
+                    <div className="h-8 w-24 bg-gray-300 rounded animate-pulse mb-1" />
+                    <div className="h-3 w-20 bg-gray-300 rounded animate-pulse" />
+                  </div>
+                  <div className="h-12 w-40 bg-gray-300 rounded-lg animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Skeleton Content */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Skeleton Contest Card */}
+            <div className="mb-8">
+              <div className="bg-white/20 backdrop-blur-lg border-2 border-gray-300 rounded-xl p-6 shadow-xl">
+                <div className="h-6 w-48 bg-gray-300 rounded animate-pulse mb-4" />
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-gray-300 rounded animate-pulse" />
+                  <div className="h-4 w-3/4 bg-gray-300 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+
+            {/* Skeleton Memes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className="bg-white/20 backdrop-blur-lg border-2 border-gray-300 rounded-xl p-6 shadow-xl">
+                  <div className="h-6 w-3/4 bg-gray-300 rounded animate-pulse mb-4" />
+                  <div className="aspect-square bg-gray-300 rounded-lg animate-pulse mb-4" />
+                  <div className="flex justify-between mb-4">
+                    <div className="h-3 w-20 bg-gray-300 rounded animate-pulse" />
+                    <div className="h-3 w-16 bg-gray-300 rounded animate-pulse" />
+                  </div>
+                  <div className="h-10 w-full bg-gray-300 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Loading indicator with progress feel */}
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2">
+          <div className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg border border-gray-300">
+            <div className="flex items-center space-x-3">
+              <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-800 font-medium">Loading memes...</span>
+            </div>
           </div>
         </div>
       </div>
