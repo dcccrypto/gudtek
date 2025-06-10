@@ -2111,7 +2111,7 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                       <div className="font-bold text-sm text-gray-900 truncate">{entry.username}</div>
                       <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
                         {entry.isVerified && (
-                          <Shield className="w-3 h-3 text-green-600" title="Verified $GUDTEK Holder" />
+                          <Shield className="w-3 h-3 text-green-600" />
                         )}
                         🎮 {entry.totalGames}
                       </div>
