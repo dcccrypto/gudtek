@@ -605,30 +605,130 @@ export default function GamePage() {
   }
 
   // Handle mobile touch controls
-  const handleMobileMove = (direction: 'up' | 'down' | 'left' | 'right') => {
+  // Mobile joystick state
+  const [joystickActive, setJoystickActive] = useState(false)
+  const [joystickPosition, setJoystickPosition] = useState({ x: 0, y: 0 })
+  const joystickRef = useRef<HTMLDivElement>(null)
+
+  // Improved mobile movement with joystick
+  const handleJoystickMove = useCallback((deltaX: number, deltaY: number) => {
     if (!gameState.gameRunning) return
     
     setGameState(prev => {
       if (!prev.gameRunning) return prev
       
       const newState = { ...prev }
-      switch (direction) {
-        case 'up':
-          newState.player.y = Math.max(0, newState.player.y - PLAYER_SPEED * 2) // Double speed for touch
-          break
-        case 'down':
-          newState.player.y = Math.min(CANVAS_HEIGHT - newState.player.height, newState.player.y + PLAYER_SPEED * 2)
-          break
-        case 'left':
-          newState.player.x = Math.max(0, newState.player.x - PLAYER_SPEED * 2)
-          break
-        case 'right':
-          newState.player.x = Math.min(CANVAS_WIDTH - newState.player.width, newState.player.x + PLAYER_SPEED * 2)
-          break
-      }
+      const speed = PLAYER_SPEED * 1.5 // Smooth movement speed for touch
+      
+      // Apply movement based on joystick position
+      newState.player.x = Math.max(0, Math.min(CANVAS_WIDTH - newState.player.width, newState.player.x + deltaX * speed))
+      newState.player.y = Math.max(0, Math.min(CANVAS_HEIGHT - newState.player.height, newState.player.y + deltaY * speed))
+      
       return newState
     })
-  }
+  }, [gameState.gameRunning])
+
+  // Handle touch/mouse events for joystick
+  const handleJoystickStart = useCallback((event: React.TouchEvent | React.MouseEvent) => {
+    event.preventDefault()
+    setJoystickActive(true)
+    setJoystickPosition({ x: 0, y: 0 })
+  }, [])
+
+  const handleJoystickMove2 = useCallback((event: React.TouchEvent | React.MouseEvent) => {
+    if (!joystickActive) return
+    event.preventDefault()
+    
+    const joystick = joystickRef.current
+    if (!joystick) return
+    
+    const rect = joystick.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    
+    let clientX, clientY
+    if ('touches' in event) {
+      if (event.touches.length === 0) return
+      clientX = event.touches[0].clientX
+      clientY = event.touches[0].clientY
+    } else {
+      clientX = event.clientX
+      clientY = event.clientY
+    }
+    
+    const deltaX = clientX - centerX
+    const deltaY = clientY - centerY
+    const maxRadius = 50 // Maximum joystick radius
+    
+    // Limit joystick movement to circle
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+    const normalizedX = distance > maxRadius ? (deltaX / distance) * maxRadius : deltaX
+    const normalizedY = distance > maxRadius ? (deltaY / distance) * maxRadius : deltaY
+    
+    setJoystickPosition({ x: normalizedX, y: normalizedY })
+    
+    // Apply movement to game
+    handleJoystickMove(normalizedX / maxRadius, normalizedY / maxRadius)
+  }, [joystickActive, handleJoystickMove])
+
+  const handleJoystickEnd = useCallback((event: React.TouchEvent | React.MouseEvent) => {
+    event.preventDefault()
+    setJoystickActive(false)
+    setJoystickPosition({ x: 0, y: 0 })
+  }, [])
+
+  // Add global event listeners for joystick
+  useEffect(() => {
+    if (joystickActive) {
+      const handleTouchMove = (e: TouchEvent) => handleJoystickMove2(e as any)
+      const handleTouchEnd = (e: TouchEvent) => handleJoystickEnd(e as any)
+      const handleMouseMove = (e: MouseEvent) => handleJoystickMove2(e as any)
+      const handleMouseUp = (e: MouseEvent) => handleJoystickEnd(e as any)
+      
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('touchend', handleTouchEnd, { passive: false })
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      
+      return () => {
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [joystickActive, handleJoystickMove2, handleJoystickEnd])
+
+  // Prevent mobile safari zoom on double tap
+  useEffect(() => {
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault()
+      }
+    }
+    
+    const preventDoubleTapZoom = (e: TouchEvent) => {
+      let t2 = e.timeStamp
+      let t1 = e.currentTarget.dataset.lastTouch || t2
+      let dt = t2 - t1
+      let fingers = e.touches.length
+      e.currentTarget.dataset.lastTouch = t2
+      
+      if (!dt || dt > 500 || fingers > 1) return // not double-tap
+      
+      e.preventDefault() // double tap - prevent the zoom
+      // also synthesize click events we just swallowed up
+      e.target.click()
+    }
+
+    document.addEventListener('touchstart', preventDoubleTapZoom, { passive: false })
+    document.addEventListener('touchstart', preventZoom, { passive: false })
+    
+    return () => {
+      document.removeEventListener('touchstart', preventDoubleTapZoom)
+      document.removeEventListener('touchstart', preventZoom)
+    }
+  }, [])
 
   // Performance-monitored game loop with optimizations
   const gameLoop = useCallback(() => {
@@ -2136,9 +2236,9 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
           </Card>
 
           {/* Main Game Area */}
-          <div className="grid lg:grid-cols-4 gap-6">
-            {/* Game Canvas */}
-            <div className="lg:col-span-3">
+          <div className="flex flex-col lg:grid lg:grid-cols-4 gap-6">
+            {/* Game Canvas - Full width on mobile, 3/4 on desktop */}
+            <div className="w-full lg:col-span-3 order-2 lg:order-1">
               <Card className="backdrop-blur-md bg-white/10 border-white/20">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between text-gray-900">
@@ -2200,7 +2300,8 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                         ref={canvasRef}
                         width={canvasDimensions.width}
                         height={canvasDimensions.height}
-                        className="w-full border-2 border-gray-900/20 rounded-lg bg-gradient-to-br from-orange-300 to-yellow-300"
+                        className="w-full max-w-full border-2 border-gray-900/20 rounded-lg bg-gradient-to-br from-orange-300 to-yellow-300 touch-none"
+                        style={{ maxHeight: '60vh' }} // Prevent canvas from taking up entire mobile screen
                       />
                     </div>
                     
@@ -2392,19 +2493,21 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                       </motion.div>
                     )}
                     
-                    {/* Game Controls Section */}
-                    <div className="space-y-4">
+                    {/* Game Controls Section - Mobile Optimized */}
+                    <div className="space-y-3">
                       {/* Main Game Button */}
                       <div className="flex justify-center">
                         {!gameState.gameRunning && !gameOver && (
                           <Button 
                             onClick={startGame} 
-                            size="lg" 
-                            className="bg-green-500 hover:bg-green-600 text-white border-2 border-gray-900 font-bold"
+                            size="lg"
+                            className="bg-green-500 hover:bg-green-600 text-white border-2 border-gray-900 font-bold px-6 py-2 md:px-8 md:py-3"
                             disabled={!canPlay}
                           >
-                            <Play className="w-5 h-5 mr-2" />
-                            {canPlay ? 'Start Game' : 'Connect Wallet to Play'}
+                            <Play className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                            <span className="text-sm md:text-base">
+                              {canPlay ? 'Start Game' : 'Connect Wallet to Play'}
+                            </span>
                           </Button>
                         )}
                         
@@ -2417,134 +2520,154 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               }}
                               size="sm" 
                               variant="outline"
-                              className="border-2 border-gray-900"
+                              className="border-2 border-gray-900 px-4 py-2"
                             >
-                              Stop Game
+                              <span className="text-sm">Stop Game</span>
                             </Button>
                           </div>
                         )}
                       </div>
                       
-                                             {/* Sound Toggle Button - Separate Row */}
-                       <div className="flex justify-center gap-2">
-                         <Button
-                           onClick={() => {
-                             setSoundEnabled(!soundEnabled)
-                             // Test sound when enabling
-                             if (!soundEnabled && soundManagerRef.current) {
-                               setTimeout(() => {
-                                 try {
-                                   soundManagerRef.current?.play('tokenCollect')
-                                   console.log('🔊 Test sound played on enable')
-                                 } catch (error) {
-                                   console.warn('⚠️ Test sound failed:', error)
-                                 }
-                               }, 100)
-                             }
-                           }}
-                           size="sm"
-                           variant="outline"
-                           className="border-2 border-gray-900 bg-white/20 hover:bg-white/30 text-gray-800 font-medium"
-                           title={soundEnabled ? 'Disable Sound Effects' : 'Enable Sound Effects'}
-                         >
-                           {soundEnabled ? (
-                             <>
-                               <Volume2 className="w-4 h-4 mr-2" />
-                               Sound ON
-                             </>
-                           ) : (
-                             <>
-                               <VolumeX className="w-4 h-4 mr-2" />
-                               Sound OFF
-                             </>
-                           )}
-                         </Button>
-                         
-                         {/* Audio Status Indicator */}
-                         {soundEnabled && (
-                           <div className="flex items-center text-xs text-gray-600">
-                             {audioContext === 'locked' && '🔒 Click to unlock'}
-                             {audioContext === 'unlocked' && '✅ Ready'}
-                             {audioContext === 'unsupported' && '❌ Unsupported'}
-                           </div>
-                         )}
-                       </div>
+                      {/* Sound Toggle - Compact for mobile */}
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          onClick={() => {
+                            setSoundEnabled(!soundEnabled)
+                            // Test sound when enabling
+                            if (!soundEnabled && soundManagerRef.current) {
+                              setTimeout(() => {
+                                try {
+                                  soundManagerRef.current?.play('tokenCollect')
+                                  console.log('🔊 Test sound played on enable')
+                                } catch (error) {
+                                  console.warn('⚠️ Test sound failed:', error)
+                                }
+                              }, 100)
+                            }
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="border-2 border-gray-900 bg-white/20 hover:bg-white/30 text-gray-800 font-medium px-3 py-2"
+                          title={soundEnabled ? 'Disable Sound Effects' : 'Enable Sound Effects'}
+                        >
+                          {soundEnabled ? (
+                            <div className="flex items-center">
+                              <Volume2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                              <span className="text-xs md:text-sm">Sound ON</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center">
+                              <VolumeX className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                              <span className="text-xs md:text-sm">Sound OFF</span>
+                            </div>
+                          )}
+                        </Button>
+                        
+                        {/* Audio Status Indicator - Hide on very small screens */}
+                        {soundEnabled && (
+                          <div className="hidden sm:flex items-center text-xs text-gray-600">
+                            {audioContext === 'locked' && '🔒 Click to unlock'}
+                            {audioContext === 'unlocked' && '✅ Ready'}
+                            {audioContext === 'unsupported' && '❌ Unsupported'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
-                    <div className="text-center text-gray-800 text-sm">
+                    {/* Desktop Instructions */}
+                    <div className="hidden md:block text-center text-gray-800 text-sm">
                       Use Arrow Keys or WASD to move • Catch tokens • Avoid obstacles
                     </div>
                     
-                    {/* Mobile Touch Controls */}
+                    {/* Mobile Touch Controls - Modern Joystick */}
                     <div className="md:hidden mt-4">
-                      <div className="grid grid-cols-3 gap-2 w-48 mx-auto">
-                        <div></div>
-                        <Button
-                          onTouchStart={() => handleMobileMove('up')}
-                          className="h-12 bg-orange-500/20 border-2 border-gray-900 hover:bg-orange-500/40"
-                          disabled={!gameState.gameRunning}
-                        >
-                          ⬆️
-                        </Button>
-                        <div></div>
-                        <Button
-                          onTouchStart={() => handleMobileMove('left')}
-                          className="h-12 bg-orange-500/20 border-2 border-gray-900 hover:bg-orange-500/40"
-                          disabled={!gameState.gameRunning}
-                        >
-                          ⬅️
-                        </Button>
-                        <div></div>
-                        <Button
-                          onTouchStart={() => handleMobileMove('right')}
-                          className="h-12 bg-orange-500/20 border-2 border-gray-900 hover:bg-orange-500/40"
-                          disabled={!gameState.gameRunning}
-                        >
-                          ➡️
-                        </Button>
-                        <div></div>
-                        <Button
-                          onTouchStart={() => handleMobileMove('down')}
-                          className="h-12 bg-orange-500/20 border-2 border-gray-900 hover:bg-orange-500/40"
-                          disabled={!gameState.gameRunning}
-                        >
-                          ⬇️
-                        </Button>
-                        <div></div>
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="text-center text-gray-800 text-sm mb-2">
+                          🎮 Touch joystick to move • Catch 🪙 tokens • Avoid ⚠️ obstacles
+                        </div>
+                        
+                        {/* Joystick Container */}
+                        <div className="relative">
+                          <div
+                            ref={joystickRef}
+                            className={`relative w-24 h-24 rounded-full border-4 border-gray-900 bg-gradient-to-br from-orange-400 to-yellow-400 shadow-lg ${
+                              gameState.gameRunning ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                            } ${joystickActive ? 'shadow-xl scale-105' : ''} transition-all duration-200`}
+                            onTouchStart={gameState.gameRunning ? handleJoystickStart : undefined}
+                            onMouseDown={gameState.gameRunning ? handleJoystickStart : undefined}
+                          >
+                            {/* Joystick Base Ring */}
+                            <div className="absolute inset-2 rounded-full border-2 border-gray-700/30" />
+                            
+                            {/* Joystick Knob */}
+                            <div
+                              className={`absolute w-8 h-8 rounded-full bg-white border-3 border-gray-900 shadow-md transition-all duration-100 ${
+                                joystickActive ? 'bg-yellow-200' : 'bg-white'
+                              }`}
+                              style={{
+                                left: `50%`,
+                                top: `50%`,
+                                transform: `translate(calc(-50% + ${joystickPosition.x}px), calc(-50% + ${joystickPosition.y}px))`,
+                              }}
+                            />
+                            
+                            {/* Center Dot */}
+                            <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-gray-600 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+                            
+                            {/* Direction Indicators */}
+                            <div className="absolute top-1 left-1/2 transform -translate-x-1/2 text-xs">⬆️</div>
+                            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs">⬇️</div>
+                            <div className="absolute left-1 top-1/2 transform -translate-y-1/2 text-xs">⬅️</div>
+                            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 text-xs">➡️</div>
+                          </div>
+                          
+                          {/* Joystick Status */}
+                          <div className="text-center mt-2">
+                            {gameState.gameRunning ? (
+                              <p className="text-xs text-gray-600">
+                                {joystickActive ? '🎯 Moving' : '👆 Touch to move'}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-500">Start game to enable controls</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-600 mt-2 text-center">Tap buttons to move on mobile</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Game Info */}
+            {/* Sidebar - Above game on mobile, side on desktop */}
+            <div className="w-full space-y-6 order-1 lg:order-2">
+              {/* Quick Game Info - Compact on mobile */}
               <Card className="backdrop-blur-md bg-white/10 border-white/20">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 flex items-center gap-2">
-                    <Star className="w-5 h-5" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-gray-900 flex items-center gap-2 text-base">
+                    <Star className="w-4 h-4" />
                     Quick Start
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-gray-900 text-sm">
-                  <div>
-                    <p className="font-bold mb-1">Objective</p>
-                    <p>Catch $GUDTEK tokens, avoid obstacles</p>
-                  </div>
-                  <div>
-                    <p className="font-bold mb-1">Controls</p>
-                    <p>Arrow keys or WASD to move</p>
-                  </div>
-                  <div>
-                    <p className="font-bold mb-1">Scoring</p>
-                    <p>10 points per token, 3 lives total</p>
-                  </div>
-                  <div>
-                    <p className="font-bold mb-1">Audio</p>
-                    <p>Sound effects enhance gameplay experience</p>
+                <CardContent className="space-y-2 text-gray-900 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+                    <div>
+                      <p className="font-bold mb-1">🎯 Objective</p>
+                      <p className="text-xs md:text-sm">Catch 🪙 tokens, avoid ⚠️ obstacles</p>
+                    </div>
+                    <div>
+                      <p className="font-bold mb-1">🎮 Controls</p>
+                      <p className="text-xs md:text-sm hidden md:block">Arrow keys or WASD</p>
+                      <p className="text-xs md:text-sm md:hidden">Touch joystick below</p>
+                    </div>
+                    <div>
+                      <p className="font-bold mb-1">🏆 Scoring</p>
+                      <p className="text-xs md:text-sm">10 points per token, 3 lives</p>
+                    </div>
+                    <div>
+                      <p className="font-bold mb-1">🔊 Audio</p>
+                      <p className="text-xs md:text-sm">Sound effects optional</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
