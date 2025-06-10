@@ -708,17 +708,21 @@ export default function GamePage() {
     }
     
     const preventDoubleTapZoom = (e: TouchEvent) => {
+      if (!e.currentTarget) return // Safety check for null currentTarget
+      
       let t2 = e.timeStamp
-      let t1 = e.currentTarget.dataset.lastTouch || t2
+      let t1 = (e.currentTarget as any).dataset.lastTouch || t2
       let dt = t2 - t1
       let fingers = e.touches.length
-      e.currentTarget.dataset.lastTouch = t2
+      ;(e.currentTarget as any).dataset.lastTouch = t2
       
       if (!dt || dt > 500 || fingers > 1) return // not double-tap
       
       e.preventDefault() // double tap - prevent the zoom
       // also synthesize click events we just swallowed up
-      e.target.click()
+      if (e.target && 'click' in e.target && typeof (e.target as any).click === 'function') {
+        (e.target as any).click()
+      }
     }
 
     document.addEventListener('touchstart', preventDoubleTapZoom, { passive: false })
