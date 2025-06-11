@@ -2168,7 +2168,7 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
               <div className="grid md:grid-cols-3 gap-6 items-center text-white">
                                   <div className="text-center">
                     <div className="text-2xl font-bold mb-2">
-                      {contestInfo.isFirst24Hours ? '🔥 24-Hour Launch Contest!' : 'Weekly $GUDTEK Airdrops'}
+                      {contestInfo.isFirst24Hours ? '🔥 48-Hour Launch Contest!' : 'Weekly $GUDTEK Airdrops'}
                     </div>
                     <div className="text-sm opacity-90">
                       {contestInfo.isFirst24Hours 
