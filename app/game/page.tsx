@@ -1997,7 +1997,7 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
   const canPlay = connected && publicKey && walletInfo.gudtekBalance >= MIN_GUDTEK_BALANCE
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900 mobile-safe-area">
       {/* Animated Background Grid */}
       <div className="fixed inset-0 opacity-10" aria-hidden="true">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
@@ -2219,7 +2219,64 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              {/* Mobile: Vertical list layout */}
+              <div className="md:hidden space-y-3">
+                {leaderboard.slice(0, 10).map((entry, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center p-4 rounded-xl shadow-lg transition-all duration-200 ${
+                      index < 3 ? 'bg-gradient-to-r from-yellow-400/20 to-orange-400/20 border-2 border-yellow-500/50' : 'bg-white/15 border border-white/30'
+                    }`}
+                  >
+                    {/* Rank and Crown */}
+                    <div className="flex-shrink-0 mr-4">
+                      {index < 3 ? (
+                        <div className="relative">
+                          <Crown className={`w-10 h-10 ${
+                            index === 0 ? 'text-yellow-500' :
+                            index === 1 ? 'text-gray-400' :
+                            'text-orange-500'
+                          }`} />
+                          <span className="absolute -top-1 -right-1 bg-gray-900 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                            {index + 1}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-500/30 rounded-xl flex items-center justify-center text-gray-600 font-bold">
+                          {index + 1}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Player Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-lg text-gray-900 truncate">{entry.username}</div>
+                          <div className="text-sm text-gray-600 flex items-center gap-2">
+                            {entry.isVerified && (
+                              <Shield className="w-4 h-4 text-green-600" />
+                            )}
+                            🎮 {entry.totalGames} games
+                          </div>
+                        </div>
+                        
+                        {/* Scores */}
+                        <div className="text-right ml-4">
+                          <div className="font-mono font-black text-xl text-gray-900">{entry.totalScore.toLocaleString()}</div>
+                          <div className="text-xs text-gray-600 font-medium">Total Score</div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            🏆 {entry.highScore.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Desktop: Grid layout */}
+              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-3">
                 {leaderboard.slice(0, 10).map((entry, index) => (
                   <div
                     key={index}
@@ -2296,66 +2353,67 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                     <motion.div
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mb-6"
+                      className="mb-4"
                     >
-                      {/* Mobile: Compact horizontal HUD */}
+                      {/* Mobile: Enhanced Responsive HUD - Simplified and Larger */}
                       <div className="md:hidden">
-                        <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 rounded-2xl p-3 shadow-2xl border-2 border-gray-600">
-                          <div className="flex items-center justify-between">
-                            {/* Left: Score and Lives */}
-                            <div className="flex items-center space-x-4">
-                              {/* Score */}
-                              <div className="flex items-center space-x-2">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
-                                  <span className="text-lg font-black text-gray-900">{gameState.score}</span>
-                                </div>
-                                <div className="text-white">
-                                  <div className="text-xs font-semibold opacity-75">SCORE</div>
-                                </div>
+                        <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 rounded-3xl p-6 shadow-2xl border-3 border-gray-600">
+                          {/* Top Row: Score (Prominent) */}
+                          <div className="flex justify-center mb-4">
+                            <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-4 shadow-xl border-2 border-yellow-200 min-w-[200px]">
+                              <div className="text-center">
+                                <div className="text-gray-900 text-sm font-black mb-1">SCORE</div>
+                                <div className="text-4xl font-black text-gray-900">{gameState.score}</div>
+                                <div className="text-xs text-gray-700 font-semibold">Points</div>
                               </div>
-                              
-                              {/* Lives as Hearts */}
-                              <div className="flex items-center space-x-1">
+                            </div>
+                          </div>
+                          
+                          {/* Bottom Row: Lives, Tokens, Time - Larger Spacing */}
+                          <div className="grid grid-cols-3 gap-4">
+                            {/* Lives as Hearts - Larger */}
+                            <div className="text-center">
+                              <div className="text-white text-xs font-bold mb-2">LIVES</div>
+                              <div className="flex justify-center space-x-1">
                                 {[...Array(3)].map((_, i) => (
                                   <div
                                     key={i}
-                                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                                       i < gameState.lives 
                                         ? 'bg-gradient-to-br from-red-400 to-pink-500 shadow-lg scale-100' 
                                         : 'bg-gray-600 scale-75 opacity-50'
                                     }`}
                                   >
-                                    <span className="text-sm">{i < gameState.lives ? '❤️' : '🖤'}</span>
+                                    <span className="text-xl">{i < gameState.lives ? '❤️' : '🖤'}</span>
                                   </div>
                                 ))}
                               </div>
                             </div>
                             
-                            {/* Right: Tokens and Time */}
-                            <div className="flex items-center space-x-3">
-                              {/* Tokens */}
-                              <div className="text-center">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-1">
-                                  <span className="text-sm font-bold text-gray-900">{gameState.tokensCollected}</span>
-                                </div>
-                                <div className="text-xs text-yellow-300 font-semibold">🪙</div>
+                            {/* Tokens - Simplified */}
+                            <div className="text-center">
+                              <div className="text-white text-xs font-bold mb-2">TOKENS</div>
+                              <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-3 shadow-xl border-2 border-green-200">
+                                <div className="text-2xl font-black text-gray-900">{gameState.tokensCollected}</div>
+                                <div className="text-xs text-gray-700 font-semibold">🪙</div>
                               </div>
-                              
-                              {/* Time */}
-                              <div className="text-center">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mx-auto mb-1">
-                                  <span className="text-xs font-bold text-white">
-                                    {gameState.gameRunning ? Math.floor((Date.now() - gameState.gameStartTime) / 1000) : 0}
-                                  </span>
+                            </div>
+                            
+                            {/* Time - Simplified */}
+                            <div className="text-center">
+                              <div className="text-white text-xs font-bold mb-2">TIME</div>
+                              <div className="bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl p-3 shadow-xl border-2 border-blue-200">
+                                <div className="text-lg font-black text-white">
+                                  {gameState.gameRunning ? Math.floor((Date.now() - gameState.gameStartTime) / 1000) : 0}s
                                 </div>
-                                <div className="text-xs text-blue-300 font-semibold">⏱️</div>
+                                <div className="text-xs text-blue-100 font-semibold">⏱️</div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Desktop: Full grid layout */}
+                      {/* Desktop: Full grid layout - Keep existing design */}
                       <div className="hidden md:grid grid-cols-4 gap-4">
                         {/* Score */}
                         <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-center shadow-2xl border-2 border-yellow-200 transform hover:scale-105 transition-all duration-300">
@@ -2394,20 +2452,30 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                         </div>
                       </div>
                     </motion.div>
-                    
 
-
+                    {/* Enhanced Game Canvas Container */}
                     <div className="relative">
                       <canvas
                         ref={canvasRef}
                         width={canvasDimensions.width}
                         height={canvasDimensions.height}
-                        className="w-full max-w-full border-2 border-gray-900/20 rounded-lg bg-gradient-to-br from-orange-300 to-yellow-300 touch-none"
-                        style={{ maxHeight: '60vh' }} // Prevent canvas from taking up entire mobile screen
+                        className="game-canvas w-full max-w-full border-3 border-gray-900/30 rounded-2xl bg-gradient-to-br from-orange-300 to-yellow-300 touch-none shadow-2xl"
+                        style={{ 
+                          minHeight: '300px', // Ensure minimum playable size
+                          maxHeight: '65vh',  // Better mobile viewport usage
+                          aspectRatio: '4/3'  // Maintain aspect ratio
+                        }}
                       />
+                      
+                      {/* Canvas Loading State */}
+                      {!mounted && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-300 to-yellow-300 rounded-2xl">
+                          <div className="text-gray-900 font-bold text-lg">🎮 Loading Game...</div>
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Game Over Overlay - Integrated within the game section */}
+                    {/* Game Over Overlay - Mobile-Optimized */}
                     {gameOver && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8, y: 50 }}
@@ -2418,21 +2486,21 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                           damping: 20,
                           staggerChildren: 0.1
                         }}
-                        className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-lg"
+                        className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-md rounded-lg z-50"
                       >
-                        <div className="max-w-2xl w-full mx-4 space-y-6">
-                          {/* Game Over Header */}
+                        <div className="max-w-lg w-full mx-4 space-y-4 max-h-[90vh] overflow-y-auto">
+                          {/* Mobile-First Game Over Header */}
                           <motion.div
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="bg-gradient-to-r from-red-500 to-orange-600 rounded-xl p-6 shadow-2xl border-4 border-yellow-400 text-center"
+                            className="bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl p-4 md:p-6 shadow-2xl border-4 border-yellow-400 text-center"
                           >
                             <motion.h3 
                               initial={{ y: -20 }}
                               animate={{ y: 0 }}
                               transition={{ delay: 0.4 }}
-                              className="text-4xl md:text-5xl font-black text-white mb-2"
+                              className="text-3xl md:text-5xl font-black text-white mb-2"
                             >
                               GAME OVER!
                             </motion.h3>
@@ -2440,29 +2508,29 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               initial={{ y: 20 }}
                               animate={{ y: 0 }}
                               transition={{ delay: 0.6 }}
-                              className="text-white/90 text-xl font-bold"
+                              className="text-white/90 text-lg md:text-xl font-bold"
                             >
                               Epic run! Check your stats below
                             </motion.p>
                           </motion.div>
 
-                          {/* Final Stats Grid */}
+                          {/* Mobile-Optimized Stats Grid */}
                           <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8 }}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                            className="grid grid-cols-2 gap-3"
                           >
-                            {/* Final Score */}
+                            {/* Final Score - Larger on mobile */}
                             <motion.div
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               transition={{ delay: 1.0 }}
-                              className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900"
+                              className="col-span-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-6 text-center shadow-lg border-2 border-gray-900"
                             >
-                              <div className="text-gray-900 text-sm font-bold mb-2">FINAL SCORE</div>
-                              <div className="text-3xl md:text-4xl font-black text-gray-900">{gameState.score}</div>
-                              <div className="text-xs text-gray-700 mt-1">Points Earned</div>
+                              <div className="text-gray-900 text-lg font-bold mb-2">FINAL SCORE</div>
+                              <div className="text-5xl md:text-6xl font-black text-gray-900">{gameState.score}</div>
+                              <div className="text-sm text-gray-700 mt-2">Points Earned</div>
                             </motion.div>
                             
                             {/* Tokens Collected */}
@@ -2470,10 +2538,10 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               transition={{ delay: 1.1 }}
-                              className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900"
+                              className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl p-4 text-center shadow-lg border-2 border-gray-900"
                             >
                               <div className="text-gray-900 text-sm font-bold mb-2">TOKENS</div>
-                              <div className="text-3xl md:text-4xl font-black text-gray-900">
+                              <div className="text-2xl md:text-3xl font-black text-gray-900">
                                 {gameState.tokensCollected}
                               </div>
                               <div className="text-xs text-gray-700 mt-1">Collected</div>
@@ -2484,49 +2552,35 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               transition={{ delay: 1.2 }}
-                              className="bg-gradient-to-r from-red-400 to-pink-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900"
+                              className="bg-gradient-to-r from-red-400 to-pink-500 rounded-xl p-4 text-center shadow-lg border-2 border-gray-900"
                             >
                               <div className="text-gray-900 text-sm font-bold mb-2">HITS</div>
-                              <div className="text-3xl md:text-4xl font-black text-gray-900">
+                              <div className="text-2xl md:text-3xl font-black text-gray-900">
                                 {gameState.obstaclesHit}
                               </div>
                               <div className="text-xs text-gray-700 mt-1">Obstacles Hit</div>
                             </motion.div>
-                            
-                            {/* Survival Time */}
-                            <motion.div
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ delay: 1.3 }}
-                              className="bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900"
-                            >
-                              <div className="text-gray-900 text-sm font-bold mb-2">SURVIVAL</div>
-                              <div className="text-3xl md:text-4xl font-black text-gray-900">
-                                {Math.floor((Date.now() - gameState.gameStartTime) / 1000)}s
-                              </div>
-                              <div className="text-xs text-gray-700 mt-1">Time Played</div>
-                            </motion.div>
                           </motion.div>
 
-                          {/* Performance Rating */}
+                          {/* Mobile-Friendly Performance Rating */}
                           <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1.4 }}
-                            className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-6 shadow-2xl border-4 border-yellow-400"
+                            className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-4 shadow-2xl border-4 border-yellow-400"
                           >
-                            <h4 className="text-xl font-black text-white mb-3 text-center">PERFORMANCE RATING</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white">
+                            <h4 className="text-lg font-black text-white mb-3 text-center">PERFORMANCE RATING</h4>
+                            <div className="flex justify-around text-white">
                               <motion.div
                                 initial={{ scale: 0.8 }}
                                 animate={{ scale: 1 }}
                                 transition={{ delay: 1.6 }}
                                 className="text-center"
                               >
-                                <div className="text-3xl font-bold mb-1">{gameState.tokensCollected > 10 ? '🔥' : gameState.tokensCollected > 5 ? '👍' : '🎯'}</div>
-                                <div className="text-sm font-bold">Token Collection</div>
+                                <div className="text-2xl font-bold mb-1">{gameState.tokensCollected > 10 ? '🔥' : gameState.tokensCollected > 5 ? '👍' : '🎯'}</div>
+                                <div className="text-xs font-bold">Tokens</div>
                                 <div className="text-xs opacity-75">
-                                  {gameState.tokensCollected > 10 ? 'Excellent!' : gameState.tokensCollected > 5 ? 'Good Job!' : 'Keep Trying!'}
+                                  {gameState.tokensCollected > 10 ? 'Excellent!' : gameState.tokensCollected > 5 ? 'Good!' : 'Try More!'}
                                 </div>
                               </motion.div>
                               <motion.div
@@ -2535,10 +2589,10 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                                 transition={{ delay: 1.7 }}
                                 className="text-center"
                               >
-                                <div className="text-3xl font-bold mb-1">{gameState.obstaclesHit < 2 ? '🛡️' : gameState.obstaclesHit < 4 ? '⚠️' : '💀'}</div>
-                                <div className="text-sm font-bold">Dodge Skills</div>
+                                <div className="text-2xl font-bold mb-1">{gameState.obstaclesHit < 2 ? '🛡️' : gameState.obstaclesHit < 4 ? '⚠️' : '💀'}</div>
+                                <div className="text-xs font-bold">Dodging</div>
                                 <div className="text-xs opacity-75">
-                                  {gameState.obstaclesHit < 2 ? 'Master!' : gameState.obstaclesHit < 4 ? 'Not Bad' : 'Practice More'}
+                                  {gameState.obstaclesHit < 2 ? 'Master!' : gameState.obstaclesHit < 4 ? 'Not Bad' : 'Practice'}
                                 </div>
                               </motion.div>
                               <motion.div
@@ -2547,85 +2601,130 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                                 transition={{ delay: 1.8 }}
                                 className="text-center"
                               >
-                                <div className="text-3xl font-bold mb-1">{gameState.score > 100 ? '💎' : gameState.score > 50 ? '🥇' : '🏅'}</div>
-                                <div className="text-sm font-bold">Overall Score</div>
+                                <div className="text-2xl font-bold mb-1">{gameState.score > 100 ? '💎' : gameState.score > 50 ? '🥇' : '🏅'}</div>
+                                <div className="text-xs font-bold">Overall</div>
                                 <div className="text-xs opacity-75">
-                                  {gameState.score > 100 ? 'Legendary!' : gameState.score > 50 ? 'Great!' : 'Getting There'}
+                                  {gameState.score > 100 ? 'Legend!' : gameState.score > 50 ? 'Great!' : 'Keep Going'}
                                 </div>
                               </motion.div>
                             </div>
                           </motion.div>
 
-                          {/* Action Buttons */}
+                          {/* Mobile-Optimized Action Buttons */}
                           <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1.9 }}
-                            className="flex flex-wrap gap-3 justify-center"
+                            className="space-y-3"
                           >
+                            {/* Play Again - Primary Action */}
                             <Button 
                               onClick={startGame} 
                               size="lg" 
-                              className="bg-green-500 hover:bg-green-600 text-white border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200"
+                              className="w-full h-16 bg-green-500 hover:bg-green-600 text-white border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200 text-xl"
                             >
-                              <RotateCcw className="w-5 h-5 mr-2" />
+                              <RotateCcw className="w-6 h-6 mr-3" />
                               Play Again
                             </Button>
+                            
+                            {/* Submit Score - Large Touch Target */}
                             <Button 
                               onClick={submitScore} 
                               disabled={isSubmitting || hasSubmittedThisGame || (Date.now() - lastSubmissionTime < 3000)} 
                               size="lg" 
-                              className={`border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200 ${
+                              className={`w-full h-16 border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200 text-xl ${
                                 hasSubmittedThisGame 
                                   ? 'bg-gray-500 hover:bg-gray-600 text-gray-200 cursor-not-allowed' 
-                                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                  : isSubmitting
+                                    ? 'bg-purple-500 hover:bg-purple-600 text-white animate-pulse'
+                                    : 'bg-blue-500 hover:bg-blue-600 text-white'
                               }`}
                             >
-                              <Trophy className="w-5 h-5 mr-2" />
+                              <Trophy className="w-6 h-6 mr-3" />
                               {hasSubmittedThisGame 
-                                ? 'Score Submitted' 
+                                ? '✅ Score Submitted' 
                                 : isSubmitting 
-                                  ? 'Submitting...' 
-                                  : 'Submit Score'}
+                                  ? '🔄 Submitting...' 
+                                  : connected 
+                                    ? '🏆 Submit Score'
+                                    : '🔗 Connect Wallet First'}
                             </Button>
-                            <Button 
-                              onClick={shareOnTwitter} 
-                              size="lg" 
-                              className="bg-black hover:bg-gray-800 text-white border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200"
-                            >
-                              <svg className="w-5 h-5 mr-2" viewBox="0 0 1200 1227" fill="currentColor">
-                                <path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"/>
-                              </svg>
-                              Share Victory
-                            </Button>
+                            
+                            {/* Share on mobile - Stacked vertically */}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Button 
+                                onClick={shareOnTwitter} 
+                                size="lg" 
+                                className="flex-1 h-14 bg-black hover:bg-gray-800 text-white border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200"
+                              >
+                                <svg className="w-5 h-5 mr-2" viewBox="0 0 1200 1227" fill="currentColor">
+                                  <path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"/>
+                                </svg>
+                                Share Victory
+                              </Button>
+                              
+                              {/* Accessibility: Add a clear close button */}
+                              <Button 
+                                onClick={() => setGameOver(false)} 
+                                size="lg" 
+                                variant="outline"
+                                className="h-14 bg-white/10 hover:bg-white/20 text-white border-4 border-white/30 font-black shadow-xl transform hover:scale-105 transition-all duration-200"
+                              >
+                                <X className="w-5 h-5 mr-2" />
+                                Close
+                              </Button>
+                            </div>
                           </motion.div>
+                          
+                          {/* Mobile-friendly submission status */}
+                          {isSubmitting && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="bg-purple-500/20 border-2 border-purple-400 rounded-xl p-4 text-center"
+                            >
+                              <div className="text-white font-bold">🔄 Submitting your score...</div>
+                              <div className="text-white/80 text-sm mt-1">Please wait a moment</div>
+                            </motion.div>
+                          )}
+                          
+                          {hasSubmittedThisGame && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="bg-green-500/20 border-2 border-green-400 rounded-xl p-4 text-center"
+                            >
+                              <div className="text-green-400 font-bold">✅ Score submitted successfully!</div>
+                              <div className="text-green-300 text-sm mt-1">Check the leaderboard</div>
+                            </motion.div>
+                          )}
                         </div>
                       </motion.div>
                     )}
                     
-                    {/* Professional Game Controls */}
-                    <div className="space-y-4">
-                      {/* Main Game Button - Enhanced */}
+                    {/* Enhanced Mobile-Optimized Game Controls */}
+                    <div className="space-y-6">
+                      {/* Main Game Button - Larger Mobile Design */}
                       <div className="flex justify-center">
                         {!gameState.gameRunning && !gameOver && (
                           <Button 
                             onClick={startGame} 
                             size="lg"
                             className={`
-                              relative overflow-hidden font-bold text-lg py-4 px-8 rounded-2xl border-3 shadow-2xl transition-all duration-300 transform hover:scale-105
+                              mobile-button relative overflow-hidden font-black text-xl py-8 px-10 rounded-3xl border-4 shadow-2xl transition-all duration-300 transform hover:scale-105 w-full max-w-sm h-20 md:h-auto md:w-auto md:max-w-md
                               ${canPlay 
-                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-green-300 shadow-green-500/30' 
-                                : 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-200 border-gray-300 shadow-gray-500/20 cursor-not-allowed'
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-green-300 shadow-green-500/50' 
+                                : 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-200 border-gray-300 shadow-gray-500/30 cursor-not-allowed'
                               }
                             `}
                             disabled={!canPlay}
                           >
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${canPlay ? 'bg-white/20' : 'bg-gray-600/20'}`}>
-                                <Play className="w-5 h-5" />
+                            <div className="flex items-center justify-center space-x-4">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${canPlay ? 'bg-white/30' : 'bg-gray-600/30'}`}>
+                                <Play className="w-6 h-6" />
                               </div>
-                              <span className="md:text-xl">
-                                {canPlay ? 'Start Game' : 'Connect Wallet to Play'}
+                              <span className="text-center font-black">
+                                {canPlay ? '🎮 START GAME' : '🔗 CONNECT WALLET'}
                               </span>
                             </div>
                             {canPlay && (
@@ -2641,19 +2740,19 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               setGameOver(true)
                             }}
                             size="lg"
-                            className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white border-3 border-red-300 font-bold py-4 px-8 rounded-2xl shadow-2xl shadow-red-500/30 transition-all duration-300 transform hover:scale-105"
+                            className="w-full max-w-sm h-20 md:h-auto md:w-auto md:max-w-md bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white border-4 border-red-300 font-black py-8 px-10 rounded-3xl shadow-2xl shadow-red-500/50 transition-all duration-300 transform hover:scale-105"
                           >
-                            <div className="flex items-center space-x-2">
-                              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                                <span className="text-lg">⏹</span>
+                            <div className="flex items-center justify-center space-x-4">
+                              <div className="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center">
+                                <span className="text-2xl">⏹</span>
                               </div>
-                              <span className="text-lg">Stop Game</span>
+                              <span className="text-xl font-black">🛑 STOP GAME</span>
                             </div>
                           </Button>
                         )}
                       </div>
                       
-                      {/* Enhanced Sound Toggle */}
+                      {/* Enhanced Sound Toggle - Larger for Mobile */}
                       <div className="flex justify-center">
                         <Button
                           onClick={() => {
@@ -2670,27 +2769,27 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               }, 100)
                             }
                           }}
-                          size="default"
+                          size="lg"
                           className={`
-                            font-semibold py-3 px-6 rounded-xl border-2 shadow-lg transition-all duration-300 transform hover:scale-105
+                            font-bold py-6 px-8 rounded-2xl border-3 shadow-xl transition-all duration-300 transform hover:scale-105 min-h-16 w-full max-w-sm md:max-w-xs
                             ${soundEnabled 
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-blue-300 shadow-blue-500/30' 
-                              : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-gray-400 shadow-gray-500/30'
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-blue-300 shadow-blue-500/50' 
+                              : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-gray-400 shadow-gray-500/50'
                             }
                           `}
                           title={soundEnabled ? 'Disable Sound Effects' : 'Enable Sound Effects'}
                         >
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                          <div className="flex items-center justify-center space-x-3">
+                            <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center">
                               {soundEnabled ? (
-                                <Volume2 className="w-4 h-4" />
+                                <Volume2 className="w-5 h-5" />
                               ) : (
-                                <VolumeX className="w-4 h-4" />
+                                <VolumeX className="w-5 h-5" />
                               )}
                             </div>
-                            <span>{soundEnabled ? 'Sound ON' : 'Sound OFF'}</span>
+                            <span className="font-black text-lg">{soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF'}</span>
                             {soundEnabled && audioContext === 'unlocked' && (
-                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                             )}
                           </div>
                         </Button>
@@ -2702,39 +2801,54 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                       Use Arrow Keys or WASD to move • Catch tokens • Avoid obstacles
                     </div>
                     
-                    {/* Professional Mobile Controls */}
-                    <div className="md:hidden mt-6">
-                      <div className="flex flex-col items-center space-y-6">
-                        {/* Clean, Minimal Instructions */}
-                        <div className="text-center">
-                          <div className="inline-flex items-center bg-black/80 rounded-full px-4 py-2 text-white text-sm font-medium">
-                            <span className="mr-2">🎮</span>
-                            Touch & drag to move your character
+                    {/* Enhanced Mobile Controls Section */}
+                    <div className="md:hidden mt-8">
+                      <div className="flex flex-col items-center space-y-8">
+                        {/* Clear Mobile Instructions - Larger and More Prominent */}
+                        <div className="text-center space-y-4">
+                          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl px-8 py-4 text-white shadow-2xl border-4 border-indigo-300">
+                            <div className="flex items-center justify-center space-x-3">
+                              <span className="text-3xl">🎮</span>
+                              <span className="text-lg font-black">TOUCH & DRAG TO MOVE</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-center space-x-6">
+                            <div className="flex items-center space-x-2 bg-yellow-100 rounded-2xl px-4 py-2">
+                              <span className="text-2xl">🪙</span>
+                              <span className="text-gray-800 font-bold text-sm">Collect tokens</span>
+                            </div>
+                            <div className="flex items-center space-x-2 bg-red-100 rounded-2xl px-4 py-2">
+                              <span className="text-2xl">⚠️</span>
+                              <span className="text-gray-800 font-bold text-sm">Avoid obstacles</span>
+                            </div>
                           </div>
                         </div>
                         
-                        {/* Enhanced Joystick Container */}
+                        {/* Enhanced Joystick Container - Much Larger for Mobile */}
                         <div className="relative flex flex-col items-center">
-                          {/* Joystick */}
+                          {/* Joystick - Significantly Larger for better mobile UX */}
                           <div
                             ref={joystickRef}
-                            className={`relative w-32 h-32 rounded-full shadow-2xl transition-all duration-300 ${
+                            className={`joystick-container relative w-48 h-48 md:w-36 md:h-36 rounded-full shadow-2xl transition-all duration-300 mobile-touch-target ${
                               gameState.gameRunning 
-                                ? 'cursor-pointer bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500' 
-                                : 'opacity-40 cursor-not-allowed bg-gray-400'
+                                ? 'cursor-pointer bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 border-4 border-blue-300' 
+                                : 'opacity-50 cursor-not-allowed bg-gray-400 border-4 border-gray-500'
                             } ${joystickActive ? 'scale-110 shadow-3xl' : 'scale-100'}`}
                             onTouchStart={gameState.gameRunning ? handleJoystickStart : undefined}
                             onMouseDown={gameState.gameRunning ? handleJoystickStart : undefined}
                           >
-                            {/* Outer Ring */}
-                            <div className="absolute inset-1 rounded-full border-4 border-white/30" />
+                            {/* Outer Ring - More visible and prominent */}
+                            <div className="absolute inset-3 rounded-full border-4 border-white/50" />
                             
-                            {/* Inner Guide Ring */}
-                            <div className="absolute inset-6 rounded-full border-2 border-white/20" />
+                            {/* Inner Guide Ring - Better spacing */}
+                            <div className="absolute inset-12 rounded-full border-3 border-white/40" />
                             
-                            {/* Joystick Knob */}
+                            {/* Center Dot for Reference */}
+                            <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-white/60 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+                            
+                            {/* Joystick Knob - Much Larger */}
                             <div
-                              className={`absolute w-12 h-12 rounded-full border-4 border-white shadow-xl transition-all duration-150 ${
+                              className={`absolute w-20 h-20 md:w-16 md:h-16 rounded-full border-4 border-white shadow-2xl transition-all duration-150 ${
                                 joystickActive 
                                   ? 'bg-yellow-300 border-yellow-100 scale-110' 
                                   : 'bg-white border-gray-200'
@@ -2745,36 +2859,50 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                                 transform: `translate(calc(-50% + ${joystickPosition.x}px), calc(-50% + ${joystickPosition.y}px))`,
                               }}
                             >
-                              {/* Knob Center */}
-                              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white to-gray-200" />
+                              {/* Knob Center - Enhanced gradient */}
+                              <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white via-gray-100 to-gray-200 shadow-inner" />
+                              
+                              {/* Active indicator */}
+                              {joystickActive && (
+                                <div className="absolute inset-4 rounded-full bg-gradient-to-br from-yellow-200 to-yellow-400 animate-pulse" />
+                              )}
+                              
+                              {/* Knob grip texture */}
+                              <div className="absolute inset-6 rounded-full border-2 border-gray-300/50" />
                             </div>
                             
-                            {/* Directional Icons - Clean and Minimal */}
-                            <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
-                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">↑</div>
+                            {/* Enhanced Directional Icons - Better positioned */}
+                            <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+                              <div className="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center text-white text-lg font-black backdrop-blur-sm border-2 border-white/30">↑</div>
                             </div>
-                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
-                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">↓</div>
+                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                              <div className="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center text-white text-lg font-black backdrop-blur-sm border-2 border-white/30">↓</div>
                             </div>
-                            <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">←</div>
+                            <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                              <div className="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center text-white text-lg font-black backdrop-blur-sm border-2 border-white/30">←</div>
                             </div>
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">→</div>
+                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                              <div className="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center text-white text-lg font-black backdrop-blur-sm border-2 border-white/30">→</div>
                             </div>
                           </div>
                           
-                          {/* Clean Status Indicator */}
-                          <div className="mt-4 text-center">
+                          {/* Enhanced Status Indicator - More Prominent */}
+                          <div className="mt-8 text-center">
                             {!gameState.gameRunning ? (
-                              <div className="text-gray-500 text-sm font-medium">Start game to enable movement</div>
+                              <div className="bg-gradient-to-r from-gray-200 to-gray-300 px-6 py-4 rounded-2xl border-3 border-gray-400 shadow-lg">
+                                <div className="text-gray-700 text-lg font-bold">🎮 Start game to enable movement</div>
+                              </div>
                             ) : joystickActive ? (
-                              <div className="flex items-center text-green-600 text-sm font-semibold">
-                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                                Moving
+                              <div className="bg-gradient-to-r from-green-200 to-emerald-300 px-6 py-4 rounded-2xl border-3 border-green-400 shadow-lg">
+                                <div className="flex items-center justify-center text-green-800 text-lg font-black">
+                                  <div className="w-4 h-4 bg-green-600 rounded-full mr-3 animate-pulse"></div>
+                                  🏃‍♂️ MOVING
+                                </div>
                               </div>
                             ) : (
-                              <div className="text-blue-600 text-sm font-medium">Ready to move</div>
+                              <div className="bg-gradient-to-r from-blue-200 to-indigo-300 px-6 py-4 rounded-2xl border-3 border-blue-400 shadow-lg">
+                                <div className="text-blue-800 text-lg font-bold">🎯 Ready to move</div>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -2790,27 +2918,35 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
               {/* Game Info - Mobile Optimized */}
               <Card className="backdrop-blur-md bg-gradient-to-br from-blue-50/90 to-purple-50/90 border-2 border-blue-200/50 shadow-xl">
                 <CardContent className="p-4">
-                  {/* Mobile: Horizontal layout, Desktop: Grid */}
+                  {/* Mobile: Enhanced Layout */}
                   <div className="md:hidden">
-                    {/* Mobile: Single row with key info */}
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-2">
-                            <span className="text-white text-xs font-bold">🪙</span>
-                          </div>
-                          <span className="font-semibold text-gray-800">Collect tokens</span>
+                    {/* Mobile: Clean grid layout */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col items-center space-y-2 bg-yellow-50 rounded-2xl p-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
+                          <span className="text-white text-lg font-bold">🪙</span>
                         </div>
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center mr-2">
-                            <span className="text-white text-xs font-bold">⚠️</span>
-                          </div>
-                          <span className="font-semibold text-gray-800">Avoid obstacles</span>
+                        <div className="text-center">
+                          <div className="font-black text-gray-800 text-sm">COLLECT TOKENS</div>
+                          <div className="text-xs text-gray-600 font-semibold">+10 points each</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-gray-600">10 pts per token</div>
-                        <div className="text-xs text-gray-600">3 lives total</div>
+                      
+                      <div className="flex flex-col items-center space-y-2 bg-red-50 rounded-2xl p-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
+                          <span className="text-white text-lg font-bold">⚠️</span>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-black text-gray-800 text-sm">AVOID OBSTACLES</div>
+                          <div className="text-xs text-gray-600 font-semibold">Lose 1 life each hit</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Quick stats */}
+                    <div className="mt-4 text-center">
+                      <div className="bg-blue-50 rounded-2xl p-3">
+                        <div className="text-gray-700 text-sm font-bold">💡 You have 3 lives total • Game gets harder over time</div>
                       </div>
                     </div>
                   </div>

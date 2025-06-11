@@ -88,6 +88,20 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <head>
+        {/* Essential Mobile Optimization */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="GUD TEK Game" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="HandheldFriendly" content="true" />
+        <meta name="MobileOptimized" content="320" />
+        
+        {/* Touch and Gesture Optimization */}
+        <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="apple-touch-fullscreen" content="yes" />
+        
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
