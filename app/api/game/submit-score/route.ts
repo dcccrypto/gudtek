@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createGameSession, updateLeaderboard } from '@/lib/supabase'
 import crypto from 'crypto'
 
+// Rate limiting store (in production, use Redis or database)
+const submissionTracker = new Map<string, { lastSubmission: number; recentScores: Array<{ score: number; timestamp: number }> }>()
+
 // Utility to validate score data
 function validateScoreData(scoreData: any) {
   const requiredFields = ['walletAddress', 'score', 'durationMs', 'tokensCollected', 'obstaclesHit']
@@ -30,7 +33,7 @@ function validateScoreData(scoreData: any) {
     errors.push('Obstacles hit must be a non-negative number')
   }
 
-  // Sanity checks for potential cheating
+  // Enhanced sanity checks for potential cheating
   if (scoreData.score > 100000) {
     errors.push('Score appears unusually high - possible cheating detected')
   }
@@ -44,6 +47,59 @@ function validateScoreData(scoreData: any) {
   }
 
   return errors
+}
+
+// Enhanced rate limiting and duplicate prevention
+function checkRateLimit(walletAddress: string, newScore: number): { allowed: boolean; reason?: string } {
+  const now = Date.now()
+  const tracker = submissionTracker.get(walletAddress)
+  
+  if (!tracker) {
+    // First submission for this wallet
+    submissionTracker.set(walletAddress, {
+      lastSubmission: now,
+      recentScores: [{ score: newScore, timestamp: now }]
+    })
+    return { allowed: true }
+  }
+
+  // Check minimum time between submissions (prevent rapid clicking)
+  const timeSinceLastSubmission = now - tracker.lastSubmission
+  if (timeSinceLastSubmission < 3000) { // 3 second minimum between submissions
+    return { 
+      allowed: false, 
+      reason: `Please wait ${Math.ceil((3000 - timeSinceLastSubmission) / 1000)} seconds before submitting again` 
+    }
+  }
+
+  // Clean old scores (older than 5 minutes)
+  tracker.recentScores = tracker.recentScores.filter(entry => now - entry.timestamp < 300000)
+
+  // Check for duplicate scores in recent submissions (within 5 minutes)
+  const duplicateScore = tracker.recentScores.find(entry => entry.score === newScore)
+  if (duplicateScore) {
+    const minutesAgo = Math.ceil((now - duplicateScore.timestamp) / 60000)
+    return { 
+      allowed: false, 
+      reason: `You already submitted score ${newScore} ${minutesAgo} minute(s) ago. Please play a new game to submit a different score.` 
+    }
+  }
+
+  // Check submission frequency (max 10 submissions per hour)
+  const recentSubmissions = tracker.recentScores.filter(entry => now - entry.timestamp < 3600000) // 1 hour
+  if (recentSubmissions.length >= 10) {
+    return { 
+      allowed: false, 
+      reason: 'Too many submissions in the last hour. Please wait before submitting more scores.' 
+    }
+  }
+
+  // Update tracker
+  tracker.lastSubmission = now
+  tracker.recentScores.push({ score: newScore, timestamp: now })
+  submissionTracker.set(walletAddress, tracker)
+  
+  return { allowed: true }
 }
 
 // Generate session hash for anti-cheat validation
@@ -76,6 +132,24 @@ export async function POST(request: NextRequest) {
           success: false
         },
         { status: 400 }
+      )
+    }
+
+    // Check rate limiting and duplicate prevention
+    const rateLimitCheck = checkRateLimit(scoreData.walletAddress, scoreData.score)
+    if (!rateLimitCheck.allowed) {
+      console.warn('Score submission blocked by rate limiting:', {
+        wallet: scoreData.walletAddress,
+        score: scoreData.score,
+        reason: rateLimitCheck.reason
+      })
+      return NextResponse.json(
+        { 
+          error: 'Submission blocked',
+          details: rateLimitCheck.reason,
+          success: false
+        },
+        { status: 429 } // Too Many Requests
       )
     }
 

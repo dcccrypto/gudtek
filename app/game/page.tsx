@@ -239,6 +239,8 @@ export default function GamePage() {
   const [gameOver, setGameOver] = useState(false)
   const [highScore, setHighScore] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasSubmittedThisGame, setHasSubmittedThisGame] = useState(false)
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<number>(0)
   
   // Game constants - optimized for performance
   const CANVAS_WIDTH = 800
@@ -1088,20 +1090,21 @@ export default function GamePage() {
 
   // Initialize game
   const initGame = useCallback(() => {
-          setGameState({
-        player: { x: 50, y: CANVAS_HEIGHT / 2 - 25, width: 50, height: 50 },
-        tokens: [],
-        obstacles: [],
-        score: 0,
-        tokensCollected: 0,
-        obstaclesHit: 0,
-        gameRunning: true,
-        gameStartTime: Date.now(),
-              lives: 3
+    setGameState({
+      player: { x: 50, y: CANVAS_HEIGHT / 2 - 25, width: 50, height: 50 },
+      tokens: [],
+      obstacles: [],
+      score: 0,
+      tokensCollected: 0,
+      obstaclesHit: 0,
+      gameRunning: true,
+      gameStartTime: Date.now(),
+      lives: 3
     })
     setGameOver(false)
     setTokenCollectCombo(0)
     setLastTokenCollectTime(0)
+    setHasSubmittedThisGame(false) // Reset submission state for new game
   }, [])
 
   // Start game
@@ -1218,6 +1221,7 @@ export default function GamePage() {
   const submitScore = async () => {
     const finalScore = gameState.score
     const duration = Date.now() - gameState.gameStartTime
+    const now = Date.now()
     
     console.log('🎮 Game ended - Score:', finalScore, 'Duration:', duration + 'ms')
     
@@ -1245,8 +1249,32 @@ export default function GamePage() {
       return
     }
 
+    // Enhanced anti-exploitation checks
+    if (hasSubmittedThisGame) {
+      toast({
+        title: "Already Submitted",
+        description: "You have already submitted this game's score. Start a new game to submit again.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Rate limiting check (3 second minimum between submissions)
+    if (now - lastSubmissionTime < 3000) {
+      const waitTime = Math.ceil((3000 - (now - lastSubmissionTime)) / 1000)
+      toast({
+        title: "Please Wait",
+        description: `Please wait ${waitTime} second(s) before submitting another score.`,
+        variant: "destructive",
+      })
+      return
+    }
+
     // If connected but submitting already, prevent double submission
-    if (isSubmitting) return
+    if (isSubmitting) {
+      console.log('🚫 Submission already in progress')
+      return
+    }
     
     setIsSubmitting(true)
     console.log('🚀 Submitting to global leaderboard...')
@@ -1287,6 +1315,10 @@ export default function GamePage() {
 
       if (result.success) {
         console.log('✅ Score submitted to global leaderboard!')
+        
+        // Mark this game session as submitted to prevent duplicate submissions
+        setHasSubmittedThisGame(true)
+        setLastSubmissionTime(now)
         
         const isNewHighScore = result.leaderboard?.isNewHighScore
         const totalGames = result.leaderboard?.totalGames || 1
@@ -2260,39 +2292,105 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Game Stats Display - Always visible at the top */}
+                    {/* Professional Mobile-First HUD */}
                     <motion.div
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"
+                      className="mb-6"
                     >
-                      {/* Score */}
-                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900/20">
-                        <div className="text-gray-900 text-sm font-bold mb-1">SCORE</div>
-                        <div className="text-2xl md:text-3xl font-black text-gray-900">{gameState.score}</div>
-                      </div>
-                      
-                      {/* Tokens Collected */}
-                      <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900/20">
-                        <div className="text-gray-900 text-sm font-bold mb-1">TOKENS</div>
-                        <div className="text-2xl md:text-3xl font-black text-gray-900">
-                          {gameState.tokensCollected}
+                      {/* Mobile: Compact horizontal HUD */}
+                      <div className="md:hidden">
+                        <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 rounded-2xl p-3 shadow-2xl border-2 border-gray-600">
+                          <div className="flex items-center justify-between">
+                            {/* Left: Score and Lives */}
+                            <div className="flex items-center space-x-4">
+                              {/* Score */}
+                              <div className="flex items-center space-x-2">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
+                                  <span className="text-lg font-black text-gray-900">{gameState.score}</span>
+                                </div>
+                                <div className="text-white">
+                                  <div className="text-xs font-semibold opacity-75">SCORE</div>
+                                </div>
+                              </div>
+                              
+                              {/* Lives as Hearts */}
+                              <div className="flex items-center space-x-1">
+                                {[...Array(3)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                                      i < gameState.lives 
+                                        ? 'bg-gradient-to-br from-red-400 to-pink-500 shadow-lg scale-100' 
+                                        : 'bg-gray-600 scale-75 opacity-50'
+                                    }`}
+                                  >
+                                    <span className="text-sm">{i < gameState.lives ? '❤️' : '🖤'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            {/* Right: Tokens and Time */}
+                            <div className="flex items-center space-x-3">
+                              {/* Tokens */}
+                              <div className="text-center">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-1">
+                                  <span className="text-sm font-bold text-gray-900">{gameState.tokensCollected}</span>
+                                </div>
+                                <div className="text-xs text-yellow-300 font-semibold">🪙</div>
+                              </div>
+                              
+                              {/* Time */}
+                              <div className="text-center">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mx-auto mb-1">
+                                  <span className="text-xs font-bold text-white">
+                                    {gameState.gameRunning ? Math.floor((Date.now() - gameState.gameStartTime) / 1000) : 0}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-blue-300 font-semibold">⏱️</div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
-                      {/* Lives */}
-                      <div className="bg-gradient-to-r from-red-400 to-pink-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900/20">
-                        <div className="text-gray-900 text-sm font-bold mb-1">LIVES</div>
-                        <div className="text-2xl md:text-3xl font-black text-gray-900">
-                          {gameState.lives}
+                      {/* Desktop: Full grid layout */}
+                      <div className="hidden md:grid grid-cols-4 gap-4">
+                        {/* Score */}
+                        <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-center shadow-2xl border-2 border-yellow-200 transform hover:scale-105 transition-all duration-300">
+                          <div className="text-gray-900 text-sm font-bold mb-2">SCORE</div>
+                          <div className="text-4xl font-black text-gray-900">{gameState.score}</div>
+                          <div className="text-xs text-gray-700 mt-1">Points</div>
                         </div>
-                      </div>
-                      
-                      {/* Time */}
-                      <div className="bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg p-4 text-center shadow-lg border-2 border-gray-900/20">
-                        <div className="text-gray-900 text-sm font-bold mb-1">TIME</div>
-                        <div className="text-2xl md:text-3xl font-black text-gray-900">
-                          {gameState.gameRunning ? Math.floor((Date.now() - gameState.gameStartTime) / 1000) : 0}s
+                        
+                        {/* Tokens */}
+                        <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-center shadow-2xl border-2 border-green-200 transform hover:scale-105 transition-all duration-300">
+                          <div className="text-gray-900 text-sm font-bold mb-2">TOKENS</div>
+                          <div className="text-4xl font-black text-gray-900">{gameState.tokensCollected}</div>
+                          <div className="text-xs text-gray-700 mt-1">Collected</div>
+                        </div>
+                        
+                        {/* Lives */}
+                        <div className="bg-gradient-to-br from-red-400 to-pink-500 rounded-2xl p-6 text-center shadow-2xl border-2 border-red-200 transform hover:scale-105 transition-all duration-300">
+                          <div className="text-gray-900 text-sm font-bold mb-2">LIVES</div>
+                          <div className="text-4xl font-black text-gray-900">{gameState.lives}</div>
+                          <div className="flex justify-center space-x-1 mt-2">
+                            {[...Array(3)].map((_, i) => (
+                              <span key={i} className="text-lg">
+                                {i < gameState.lives ? '❤️' : '🖤'}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Time */}
+                        <div className="bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl p-6 text-center shadow-2xl border-2 border-blue-200 transform hover:scale-105 transition-all duration-300">
+                          <div className="text-gray-900 text-sm font-bold mb-2">TIME</div>
+                          <div className="text-4xl font-black text-gray-900">
+                            {gameState.gameRunning ? Math.floor((Date.now() - gameState.gameStartTime) / 1000) : 0}s
+                          </div>
+                          <div className="text-xs text-gray-700 mt-1">Survival</div>
                         </div>
                       </div>
                     </motion.div>
@@ -2475,12 +2573,20 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                             </Button>
                             <Button 
                               onClick={submitScore} 
-                              disabled={isSubmitting} 
+                              disabled={isSubmitting || hasSubmittedThisGame || (Date.now() - lastSubmissionTime < 3000)} 
                               size="lg" 
-                              className="bg-blue-500 hover:bg-blue-600 text-white border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200"
+                              className={`border-4 border-yellow-400 font-black shadow-xl transform hover:scale-105 transition-all duration-200 ${
+                                hasSubmittedThisGame 
+                                  ? 'bg-gray-500 hover:bg-gray-600 text-gray-200 cursor-not-allowed' 
+                                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+                              }`}
                             >
                               <Trophy className="w-5 h-5 mr-2" />
-                              {isSubmitting ? 'Submitting...' : 'Submit Score'}
+                              {hasSubmittedThisGame 
+                                ? 'Score Submitted' 
+                                : isSubmitting 
+                                  ? 'Submitting...' 
+                                  : 'Submit Score'}
                             </Button>
                             <Button 
                               onClick={shareOnTwitter} 
@@ -2497,43 +2603,58 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                       </motion.div>
                     )}
                     
-                    {/* Game Controls Section - Mobile Optimized */}
-                    <div className="space-y-3">
-                      {/* Main Game Button */}
+                    {/* Professional Game Controls */}
+                    <div className="space-y-4">
+                      {/* Main Game Button - Enhanced */}
                       <div className="flex justify-center">
                         {!gameState.gameRunning && !gameOver && (
                           <Button 
                             onClick={startGame} 
                             size="lg"
-                            className="bg-green-500 hover:bg-green-600 text-white border-2 border-gray-900 font-bold px-6 py-2 md:px-8 md:py-3"
+                            className={`
+                              relative overflow-hidden font-bold text-lg py-4 px-8 rounded-2xl border-3 shadow-2xl transition-all duration-300 transform hover:scale-105
+                              ${canPlay 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-green-300 shadow-green-500/30' 
+                                : 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-200 border-gray-300 shadow-gray-500/20 cursor-not-allowed'
+                              }
+                            `}
                             disabled={!canPlay}
                           >
-                            <Play className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                            <span className="text-sm md:text-base">
-                              {canPlay ? 'Start Game' : 'Connect Wallet to Play'}
-                            </span>
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${canPlay ? 'bg-white/20' : 'bg-gray-600/20'}`}>
+                                <Play className="w-5 h-5" />
+                              </div>
+                              <span className="md:text-xl">
+                                {canPlay ? 'Start Game' : 'Connect Wallet to Play'}
+                              </span>
+                            </div>
+                            {canPlay && (
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 transform -skew-x-12"></div>
+                            )}
                           </Button>
                         )}
                         
                         {gameState.gameRunning && !gameOver && (
-                          <div className="text-center">
-                            <Button 
-                              onClick={() => {
-                                setGameState(prev => ({ ...prev, gameRunning: false }))
-                                setGameOver(true)
-                              }}
-                              size="sm" 
-                              variant="outline"
-                              className="border-2 border-gray-900 px-4 py-2"
-                            >
-                              <span className="text-sm">Stop Game</span>
-                            </Button>
-                          </div>
+                          <Button 
+                            onClick={() => {
+                              setGameState(prev => ({ ...prev, gameRunning: false }))
+                              setGameOver(true)
+                            }}
+                            size="lg"
+                            className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white border-3 border-red-300 font-bold py-4 px-8 rounded-2xl shadow-2xl shadow-red-500/30 transition-all duration-300 transform hover:scale-105"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                <span className="text-lg">⏹</span>
+                              </div>
+                              <span className="text-lg">Stop Game</span>
+                            </div>
+                          </Button>
                         )}
                       </div>
                       
-                      {/* Sound Toggle - Compact for mobile */}
-                      <div className="flex justify-center gap-2">
+                      {/* Enhanced Sound Toggle */}
+                      <div className="flex justify-center">
                         <Button
                           onClick={() => {
                             setSoundEnabled(!soundEnabled)
@@ -2549,32 +2670,30 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               }, 100)
                             }
                           }}
-                          size="sm"
-                          variant="outline"
-                          className="border-2 border-gray-900 bg-white/20 hover:bg-white/30 text-gray-800 font-medium px-3 py-2"
+                          size="default"
+                          className={`
+                            font-semibold py-3 px-6 rounded-xl border-2 shadow-lg transition-all duration-300 transform hover:scale-105
+                            ${soundEnabled 
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-blue-300 shadow-blue-500/30' 
+                              : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-gray-400 shadow-gray-500/30'
+                            }
+                          `}
                           title={soundEnabled ? 'Disable Sound Effects' : 'Enable Sound Effects'}
                         >
-                          {soundEnabled ? (
-                            <div className="flex items-center">
-                              <Volume2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                              <span className="text-xs md:text-sm">Sound ON</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                              {soundEnabled ? (
+                                <Volume2 className="w-4 h-4" />
+                              ) : (
+                                <VolumeX className="w-4 h-4" />
+                              )}
                             </div>
-                          ) : (
-                            <div className="flex items-center">
-                              <VolumeX className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                              <span className="text-xs md:text-sm">Sound OFF</span>
-                            </div>
-                          )}
-                        </Button>
-                        
-                        {/* Audio Status Indicator - Hide on very small screens */}
-                        {soundEnabled && (
-                          <div className="hidden sm:flex items-center text-xs text-gray-600">
-                            {audioContext === 'locked' && '🔒 Click to unlock'}
-                            {audioContext === 'unlocked' && '✅ Ready'}
-                            {audioContext === 'unsupported' && '❌ Unsupported'}
+                            <span>{soundEnabled ? 'Sound ON' : 'Sound OFF'}</span>
+                            {soundEnabled && audioContext === 'unlocked' && (
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            )}
                           </div>
-                        )}
+                        </Button>
                       </div>
                     </div>
                     
@@ -2583,56 +2702,79 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                       Use Arrow Keys or WASD to move • Catch tokens • Avoid obstacles
                     </div>
                     
-                    {/* Mobile Touch Controls - Modern Joystick */}
-                    <div className="md:hidden mt-4">
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="text-center text-gray-800 text-sm mb-2">
-                          🎮 Touch joystick to move • Catch 🪙 tokens • Avoid ⚠️ obstacles
+                    {/* Professional Mobile Controls */}
+                    <div className="md:hidden mt-6">
+                      <div className="flex flex-col items-center space-y-6">
+                        {/* Clean, Minimal Instructions */}
+                        <div className="text-center">
+                          <div className="inline-flex items-center bg-black/80 rounded-full px-4 py-2 text-white text-sm font-medium">
+                            <span className="mr-2">🎮</span>
+                            Touch & drag to move your character
+                          </div>
                         </div>
                         
-                        {/* Joystick Container */}
-                        <div className="relative">
+                        {/* Enhanced Joystick Container */}
+                        <div className="relative flex flex-col items-center">
+                          {/* Joystick */}
                           <div
                             ref={joystickRef}
-                            className={`relative w-24 h-24 rounded-full border-4 border-gray-900 bg-gradient-to-br from-orange-400 to-yellow-400 shadow-lg ${
-                              gameState.gameRunning ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
-                            } ${joystickActive ? 'shadow-xl scale-105' : ''} transition-all duration-200`}
+                            className={`relative w-32 h-32 rounded-full shadow-2xl transition-all duration-300 ${
+                              gameState.gameRunning 
+                                ? 'cursor-pointer bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500' 
+                                : 'opacity-40 cursor-not-allowed bg-gray-400'
+                            } ${joystickActive ? 'scale-110 shadow-3xl' : 'scale-100'}`}
                             onTouchStart={gameState.gameRunning ? handleJoystickStart : undefined}
                             onMouseDown={gameState.gameRunning ? handleJoystickStart : undefined}
                           >
-                            {/* Joystick Base Ring */}
-                            <div className="absolute inset-2 rounded-full border-2 border-gray-700/30" />
+                            {/* Outer Ring */}
+                            <div className="absolute inset-1 rounded-full border-4 border-white/30" />
+                            
+                            {/* Inner Guide Ring */}
+                            <div className="absolute inset-6 rounded-full border-2 border-white/20" />
                             
                             {/* Joystick Knob */}
                             <div
-                              className={`absolute w-8 h-8 rounded-full bg-white border-3 border-gray-900 shadow-md transition-all duration-100 ${
-                                joystickActive ? 'bg-yellow-200' : 'bg-white'
+                              className={`absolute w-12 h-12 rounded-full border-4 border-white shadow-xl transition-all duration-150 ${
+                                joystickActive 
+                                  ? 'bg-yellow-300 border-yellow-100 scale-110' 
+                                  : 'bg-white border-gray-200'
                               }`}
                               style={{
                                 left: `50%`,
                                 top: `50%`,
                                 transform: `translate(calc(-50% + ${joystickPosition.x}px), calc(-50% + ${joystickPosition.y}px))`,
                               }}
-                            />
+                            >
+                              {/* Knob Center */}
+                              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white to-gray-200" />
+                            </div>
                             
-                            {/* Center Dot */}
-                            <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-gray-600 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
-                            
-                            {/* Direction Indicators */}
-                            <div className="absolute top-1 left-1/2 transform -translate-x-1/2 text-xs">⬆️</div>
-                            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs">⬇️</div>
-                            <div className="absolute left-1 top-1/2 transform -translate-y-1/2 text-xs">⬅️</div>
-                            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 text-xs">➡️</div>
+                            {/* Directional Icons - Clean and Minimal */}
+                            <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
+                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">↑</div>
+                            </div>
+                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">↓</div>
+                            </div>
+                            <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">←</div>
+                            </div>
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">→</div>
+                            </div>
                           </div>
                           
-                          {/* Joystick Status */}
-                          <div className="text-center mt-2">
-                            {gameState.gameRunning ? (
-                              <p className="text-xs text-gray-600">
-                                {joystickActive ? '🎯 Moving' : '👆 Touch to move'}
-                              </p>
+                          {/* Clean Status Indicator */}
+                          <div className="mt-4 text-center">
+                            {!gameState.gameRunning ? (
+                              <div className="text-gray-500 text-sm font-medium">Start game to enable movement</div>
+                            ) : joystickActive ? (
+                              <div className="flex items-center text-green-600 text-sm font-semibold">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                                Moving
+                              </div>
                             ) : (
-                              <p className="text-xs text-gray-500">Start game to enable controls</p>
+                              <div className="text-blue-600 text-sm font-medium">Ready to move</div>
                             )}
                           </div>
                         </div>
@@ -2645,32 +2787,77 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
 
             {/* Sidebar - Above game on mobile, side on desktop */}
             <div className="w-full space-y-6 order-1 lg:order-2">
-              {/* Quick Game Info - Compact on mobile */}
-              <Card className="backdrop-blur-md bg-white/10 border-white/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-gray-900 flex items-center gap-2 text-base">
-                    <Star className="w-4 h-4" />
-                    Quick Start
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-gray-900 text-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                    <div>
-                      <p className="font-bold mb-1">🎯 Objective</p>
-                      <p className="text-xs md:text-sm">Catch 🪙 tokens, avoid ⚠️ obstacles</p>
+              {/* Game Info - Mobile Optimized */}
+              <Card className="backdrop-blur-md bg-gradient-to-br from-blue-50/90 to-purple-50/90 border-2 border-blue-200/50 shadow-xl">
+                <CardContent className="p-4">
+                  {/* Mobile: Horizontal layout, Desktop: Grid */}
+                  <div className="md:hidden">
+                    {/* Mobile: Single row with key info */}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-2">
+                            <span className="text-white text-xs font-bold">🪙</span>
+                          </div>
+                          <span className="font-semibold text-gray-800">Collect tokens</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center mr-2">
+                            <span className="text-white text-xs font-bold">⚠️</span>
+                          </div>
+                          <span className="font-semibold text-gray-800">Avoid obstacles</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-600">10 pts per token</div>
+                        <div className="text-xs text-gray-600">3 lives total</div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold mb-1">🎮 Controls</p>
-                      <p className="text-xs md:text-sm hidden md:block">Arrow keys or WASD</p>
-                      <p className="text-xs md:text-sm md:hidden">Touch joystick below</p>
+                  </div>
+                  
+                  {/* Desktop: Grid layout */}
+                  <div className="hidden md:block">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Star className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-gray-900 font-bold text-lg">Game Guide</h3>
                     </div>
-                    <div>
-                      <p className="font-bold mb-1">🏆 Scoring</p>
-                      <p className="text-xs md:text-sm">10 points per token, 3 lives</p>
-                    </div>
-                    <div>
-                      <p className="font-bold mb-1">🔊 Audio</p>
-                      <p className="text-xs md:text-sm">Sound effects optional</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
+                          <span className="text-white font-bold">🪙</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">Collect Tokens</p>
+                          <p className="text-sm text-gray-600">+10 points each</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
+                          <span className="text-white font-bold">⚠️</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">Avoid Obstacles</p>
+                          <p className="text-sm text-gray-600">Lose 1 life each hit</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                          <span className="text-white font-bold">🎮</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">Controls</p>
+                          <p className="text-sm text-gray-600">Arrow keys or WASD</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center">
+                          <span className="text-white font-bold">❤️</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">Lives</p>
+                          <p className="text-sm text-gray-600">3 lives to start</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

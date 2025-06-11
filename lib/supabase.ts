@@ -615,18 +615,24 @@ export const updateLeaderboard = async (userId: string, newScore: number, tokens
     if (existingEntry) {
       console.log('Existing entry found:', existingEntry)
       
-      // Always update total_games, total_tokens_collected, and total_score
-      const updates = {
-        total_games: existingEntry.total_games + 1,
-        total_tokens_collected: existingEntry.total_tokens_collected + tokensCollected,
-        total_score: (existingEntry.total_score || 0) + newScore,
-        updated_at: new Date().toISOString()
-      }
+      // Calculate totals from VALID sessions only
+      const { data: validStats } = await supabase
+        .from('game_sessions')
+        .select('score, tokens_collected')
+        .eq('user_id', userId)
+        .eq('is_valid', true)
       
-      // Only update high_score if new score is higher
-      if (newScore > (existingEntry as any).high_score) {
-        (updates as any).high_score = newScore
-        console.log('New high score achieved:', newScore, 'Previous:', (existingEntry as any).high_score)
+      const totalValidGames = validStats?.length || 0
+      const totalValidScore = validStats?.reduce((sum, session) => sum + session.score, 0) || 0
+      const totalValidTokens = validStats?.reduce((sum, session) => sum + session.tokens_collected, 0) || 0
+      const highScore = Math.max(...(validStats?.map(s => s.score) || [0]))
+      
+      const updates = {
+        total_games: totalValidGames,
+        total_tokens_collected: totalValidTokens,
+        total_score: totalValidScore,
+        high_score: Math.max(highScore, existingEntry.high_score || 0),
+        updated_at: new Date().toISOString()
       }
 
       const { data, error } = await supabase
@@ -641,7 +647,7 @@ export const updateLeaderboard = async (userId: string, newScore: number, tokens
         throw error
       }
       
-      console.log('Leaderboard updated successfully:', data)
+      console.log('Leaderboard updated successfully (valid sessions only):', data)
       
       // Always refresh ranks after any update
       await refreshLeaderboardRanks()
@@ -662,16 +668,28 @@ export const updateLeaderboard = async (userId: string, newScore: number, tokens
         throw userError || new Error('User not found')
       }
 
+      // Calculate totals from VALID sessions only for new entry
+      const { data: validStats } = await supabase
+        .from('game_sessions')
+        .select('score, tokens_collected')
+        .eq('user_id', userId)
+        .eq('is_valid', true)
+      
+      const totalValidGames = validStats?.length || 0
+      const totalValidScore = validStats?.reduce((sum, session) => sum + session.score, 0) || 0
+      const totalValidTokens = validStats?.reduce((sum, session) => sum + session.tokens_collected, 0) || 0
+      const highScore = Math.max(...(validStats?.map(s => s.score) || [0]))
+
       const { data, error } = await supabase
         .from('game_leaderboard')
         .insert({
           user_id: userId,
           wallet_address: userInfo.wallet_address,
           username: userInfo.username,
-          high_score: newScore,
-          total_score: newScore,
-          total_games: 1,
-          total_tokens_collected: tokensCollected
+          high_score: highScore,
+          total_score: totalValidScore,
+          total_games: totalValidGames,
+          total_tokens_collected: totalValidTokens
         })
         .select()
         .single()
@@ -681,7 +699,7 @@ export const updateLeaderboard = async (userId: string, newScore: number, tokens
         throw error
       }
       
-      console.log('New leaderboard entry created:', data)
+      console.log('New leaderboard entry created (valid sessions only):', data)
       
       // Refresh ranks after new entry
       await refreshLeaderboardRanks()
