@@ -122,6 +122,51 @@ body {
     border-radius: 20px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
+  
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    min-height: 56px;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 12px;
+  }
+  
+  /* Mobile close button standards */
+  .mobile-close-button {
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    font-size: 20px;
+  }
+  
+  /* Enhanced contrast for mobile */
+  .mobile-high-contrast {
+    color: #000;
+    background-color: #fff;
+    border: 3px solid #000;
+  }
+  
+  /* Mobile gesture areas */
+  .mobile-gesture-area {
+    min-height: 60px;
+    min-width: 60px;
+    padding: 8px;
+  }
+  
+  /* Mobile overlay improvements */
+  .mobile-overlay {
+    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+  
+  /* Mobile modal positioning */
+  .mobile-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 5vh auto;
+    border-radius: 20px;
+  }
 }
 
 /* Custom utility classes */

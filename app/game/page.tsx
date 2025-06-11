@@ -422,11 +422,11 @@ export default function GamePage() {
       // For testing: set to current time minus some hours to see the countdown
       const contestStartTime = Date.now() - (20 * 60 * 60 * 1000) // Started 20 hours ago for demo (4h left)
       const currentTime = Date.now()
-      const contestEndTime = contestStartTime + (24 * 60 * 60 * 1000) // 24 hours from start
+      const contestEndTime = contestStartTime + (48 * 60 * 60 * 1000) // 48 hours from start
       const timeLeftMs = contestEndTime - currentTime
       
       if (timeLeftMs > 0) {
-        // Still in first 24 hours - calculate remaining time
+        // Still in first 48 hours - calculate remaining time
         const totalSecondsLeft = Math.floor(timeLeftMs / 1000)
         const hoursLeft = Math.floor(totalSecondsLeft / 3600)
         const minutesLeft = Math.floor((totalSecondsLeft % 3600) / 60)
@@ -2038,36 +2038,46 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                 ))}
               </div>
             </div>
-            {/* Mobile Nav Button */}
+            {/* Enhanced Mobile Nav Button */}
             <div className="-mr-2 flex md:hidden">
               <Button
                 onClick={() => setIsNavOpen(!isNavOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 bg-transparent hover:bg-transparent"
+                className="inline-flex items-center justify-center p-3 rounded-xl text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 bg-white/20 hover:bg-white/30 transition-all duration-200 min-w-[48px] min-h-[48px]"
                 aria-controls="mobile-menu"
                 aria-expanded="false"
+                title="Open navigation menu"
               >
                 <span className="sr-only">Open main menu</span>
                 {!isNavOpen ? (
-                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                  <Menu className="block h-7 w-7" aria-hidden="true" />
                 ) : (
-                  <X className="block h-6 w-6" aria-hidden="true" />
+                  <X className="block h-7 w-7" aria-hidden="true" />
                 )}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        <div className={`${isNavOpen ? 'block' : 'hidden'} md:hidden`} id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/20 backdrop-filter backdrop-blur-lg border-t border-orange-400/30">
+        {/* Mobile Menu Overlay */}
+        {isNavOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+            onClick={() => setIsNavOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+        
+        {/* Enhanced Mobile Menu */}
+        <div className={`${isNavOpen ? 'block' : 'hidden'} md:hidden relative z-50`} id="mobile-menu">
+          <div className="px-4 pt-4 pb-6 space-y-2 bg-white/30 backdrop-filter backdrop-blur-lg border-t-2 border-orange-400/50 shadow-xl">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                className={`block px-6 py-4 rounded-xl text-lg font-bold transition-all duration-200 min-h-[56px] flex items-center ${
                   item.name === 'Game' 
-                    ? 'text-gray-900 bg-white/20' 
-                    : 'text-gray-800 hover:text-gray-900'
+                    ? 'text-white bg-orange-500 shadow-lg' 
+                    : 'text-gray-800 hover:text-white hover:bg-orange-400 bg-white/20'
                 }`}
                 onClick={() => setIsNavOpen(false)}
               >
@@ -2213,7 +2223,7 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
               </CardTitle>
               <p className="text-center text-gray-700 mt-1">
                 {contestInfo.isFirst24Hours 
-                  ? '24-hour contest winners selected from top performers' 
+                  ? '48-hour contest winners selected from top performers' 
                   : 'Weekly winners selected from these top performers'
                 }
               </p>
@@ -2488,6 +2498,15 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                         }}
                         className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-md rounded-lg z-50"
                       >
+                        {/* Mobile-First Top Close Button */}
+                        <Button
+                          onClick={() => setGameOver(false)}
+                          className="absolute top-4 right-4 z-60 w-12 h-12 md:w-10 md:h-10 rounded-full bg-red-500 hover:bg-red-600 text-white border-2 border-white shadow-2xl flex items-center justify-center p-0"
+                          title="Close Game Over Screen"
+                        >
+                          <X className="w-6 h-6 md:w-5 md:h-5" />
+                        </Button>
+                        
                         <div className="max-w-lg w-full mx-4 space-y-4 max-h-[90vh] overflow-y-auto">
                           {/* Mobile-First Game Over Header */}
                           <motion.div
@@ -2663,15 +2682,15 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                                 Share Victory
                               </Button>
                               
-                              {/* Accessibility: Add a clear close button */}
+                              {/* Enhanced Mobile Close Button */}
                               <Button 
                                 onClick={() => setGameOver(false)} 
                                 size="lg" 
                                 variant="outline"
-                                className="h-14 bg-white/10 hover:bg-white/20 text-white border-4 border-white/30 font-black shadow-xl transform hover:scale-105 transition-all duration-200"
+                                className="h-16 bg-red-500/90 hover:bg-red-600 text-white border-4 border-red-300 font-black shadow-xl transform hover:scale-105 transition-all duration-200 min-w-[120px]"
                               >
-                                <X className="w-5 h-5 mr-2" />
-                                Close
+                                <X className="w-6 h-6 mr-2" />
+                                CLOSE
                               </Button>
                             </div>
                           </motion.div>
