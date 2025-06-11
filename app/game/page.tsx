@@ -2752,7 +2752,7 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                         )}
                       </div>
                       
-                      {/* Enhanced Sound Toggle - Larger for Mobile */}
+                      {/* Compact Sound Toggle */}
                       <div className="flex justify-center">
                         <Button
                           onClick={() => {
@@ -2769,27 +2769,25 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                               }, 100)
                             }
                           }}
-                          size="lg"
+                          size="default"
                           className={`
-                            font-bold py-6 px-8 rounded-2xl border-3 shadow-xl transition-all duration-300 transform hover:scale-105 min-h-16 w-full max-w-sm md:max-w-xs
+                            font-semibold py-3 px-6 rounded-xl border-2 shadow-lg transition-all duration-300 transform hover:scale-105 min-h-12 w-auto
                             ${soundEnabled 
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-blue-300 shadow-blue-500/50' 
-                              : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-gray-400 shadow-gray-500/50'
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-blue-300 shadow-blue-500/30' 
+                              : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-gray-400 shadow-gray-500/30'
                             }
                           `}
                           title={soundEnabled ? 'Disable Sound Effects' : 'Enable Sound Effects'}
                         >
-                          <div className="flex items-center justify-center space-x-3">
-                            <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center">
-                              {soundEnabled ? (
-                                <Volume2 className="w-5 h-5" />
-                              ) : (
-                                <VolumeX className="w-5 h-5" />
-                              )}
-                            </div>
-                            <span className="font-black text-lg">{soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF'}</span>
+                          <div className="flex items-center justify-center space-x-2">
+                            {soundEnabled ? (
+                              <Volume2 className="w-4 h-4" />
+                            ) : (
+                              <VolumeX className="w-4 h-4" />
+                            )}
+                            <span className="font-semibold text-sm">{soundEnabled ? 'Sound ON' : 'Sound OFF'}</span>
                             {soundEnabled && audioContext === 'unlocked' && (
-                              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                             )}
                           </div>
                         </Button>
@@ -2802,27 +2800,8 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                     </div>
                     
                     {/* Enhanced Mobile Controls Section */}
-                    <div className="md:hidden mt-8">
-                      <div className="flex flex-col items-center space-y-8">
-                        {/* Clear Mobile Instructions - Larger and More Prominent */}
-                        <div className="text-center space-y-4">
-                          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl px-8 py-4 text-white shadow-2xl border-4 border-indigo-300">
-                            <div className="flex items-center justify-center space-x-3">
-                              <span className="text-3xl">🎮</span>
-                              <span className="text-lg font-black">TOUCH & DRAG TO MOVE</span>
-                            </div>
-                          </div>
-                          <div className="flex justify-center space-x-6">
-                            <div className="flex items-center space-x-2 bg-yellow-100 rounded-2xl px-4 py-2">
-                              <span className="text-2xl">🪙</span>
-                              <span className="text-gray-800 font-bold text-sm">Collect tokens</span>
-                            </div>
-                            <div className="flex items-center space-x-2 bg-red-100 rounded-2xl px-4 py-2">
-                              <span className="text-2xl">⚠️</span>
-                              <span className="text-gray-800 font-bold text-sm">Avoid obstacles</span>
-                            </div>
-                          </div>
-                        </div>
+                    <div className="md:hidden mt-6">
+                      <div className="flex flex-col items-center space-y-6">
                         
                         {/* Enhanced Joystick Container - Much Larger for Mobile */}
                         <div className="relative flex flex-col items-center">
@@ -2918,34 +2897,11 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
               {/* Game Info - Mobile Optimized */}
               <Card className="backdrop-blur-md bg-gradient-to-br from-blue-50/90 to-purple-50/90 border-2 border-blue-200/50 shadow-xl">
                 <CardContent className="p-4">
-                  {/* Mobile: Enhanced Layout */}
+                  {/* Mobile: Simplified Layout */}
                   <div className="md:hidden">
-                    {/* Mobile: Clean grid layout */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col items-center space-y-2 bg-yellow-50 rounded-2xl p-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
-                          <span className="text-white text-lg font-bold">🪙</span>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-black text-gray-800 text-sm">COLLECT TOKENS</div>
-                          <div className="text-xs text-gray-600 font-semibold">+10 points each</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-center space-y-2 bg-red-50 rounded-2xl p-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
-                          <span className="text-white text-lg font-bold">⚠️</span>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-black text-gray-800 text-sm">AVOID OBSTACLES</div>
-                          <div className="text-xs text-gray-600 font-semibold">Lose 1 life each hit</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Quick stats */}
-                    <div className="mt-4 text-center">
-                      <div className="bg-blue-50 rounded-2xl p-3">
+                    {/* Quick stats only */}
+                    <div className="text-center">
+                      <div className="bg-blue-50 rounded-2xl p-4">
                         <div className="text-gray-700 text-sm font-bold">💡 You have 3 lives total • Game gets harder over time</div>
                       </div>
                     </div>
