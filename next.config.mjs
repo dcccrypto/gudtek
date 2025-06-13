@@ -28,6 +28,7 @@ const nextConfig = {
     // Disabled optimizeCss due to missing critters dependency
     // optimizeCss: true,
     optimizeServerReact: true,
+    serverComponentsExternalPackages: ['@supabase/supabase-js', '@supabase/realtime-js'],
   },
   
   // Image optimization
