@@ -33,7 +33,7 @@ export async function enhancePrompt(userPrompt: string): Promise<string> {
     console.log('Enhancing prompt with GPT-4o:', userPrompt);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -71,7 +71,8 @@ export async function generateImage(prompt: string): Promise<string> {
       model: "gpt-image-1", // Using GPT Image 1 for high quality images
       prompt: finalPrompt,
       n: 1,
-      size: "1024x1024"
+      size: "1024x1024",
+      quality: "standard"
     });
 
     console.log('OpenAI image response received');
