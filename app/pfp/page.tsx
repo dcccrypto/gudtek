@@ -150,6 +150,10 @@ export default function PFPGenerator() {
         description: 'This may take up to 30 seconds. Please wait...',
       });
 
+      // Implement a 60-second timeout using AbortController
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60_000);
+
       const res = await fetch('/api/pfp/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -157,9 +161,10 @@ export default function PFPGenerator() {
           prompt: prompt,
           wallet: publicKey.toString() 
         }),
-        // Increase timeout for image generation
-        timeout: 60000,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const errorData = await res.json();
