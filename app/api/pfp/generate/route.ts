@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import sharp from 'sharp';
 import { generateImage, enhancePrompt } from '@/lib/openai';
+import path from 'path';
 
 // Token requirement to use the PFP generator
 const TOKEN_REQUIREMENT = 20000;
@@ -121,24 +122,22 @@ export async function POST(request: Request) {
 
 async function addWatermark(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
-        <defs>
-          <pattern id="watermark" patternUnits="userSpaceOnUse" width="400" height="200" patternTransform="rotate(-30 0 0)">
-            <text x="0" y="150" font-size="120" font-weight="bold" fill="rgba(255,255,255,0.25)">GUDTEK</text>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#watermark)" />
-      </svg>`;
+    // Use the transparent PNG watermark placed in /public/watermark.png
+    const watermarkPath = path.join(process.cwd(), 'public', 'watermark.png');
 
-    const svgBuffer = Buffer.from(svg);
-
+    // Tile the watermark across the whole image with an overlay blend
     return await sharp(imageBuffer)
-      .composite([{ input: svgBuffer, blend: 'overlay' }])
+      .composite([
+        {
+          input: watermarkPath,
+          tile: true,
+          blend: 'overlay'
+        }
+      ])
       .png({ quality: 90 })
       .toBuffer();
   } catch (error) {
-    console.error('Watermark overlay failed:', error);
+    console.error('Watermarking with PNG failed:', error);
     return imageBuffer;
   }
 } 

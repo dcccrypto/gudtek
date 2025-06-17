@@ -126,14 +126,14 @@ export default function GudTekLanding() {
           <img
             src="/artwork/mascot1.png"
             alt="Gud Tek Mascot Decorative"
-            className="absolute top-20 left-4 w-64 md:w-80 opacity-80 rotate-[-10deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+            className="hidden sm:block absolute top-20 left-4 sm:w-64 md:w-80 opacity-80 rotate-[-10deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
             aria-hidden="true"
           />
           {/* Decorative mascot image 2 */}
           <img
             src="/artwork/mascot2.png"
             alt="Gud Tek Mascot Decorative 2"
-            className="absolute top-24 right-4 w-64 md:w-80 opacity-80 rotate-[8deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+            className="hidden sm:block absolute top-24 right-4 sm:w-64 md:w-80 opacity-80 rotate-[8deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
             aria-hidden="true"
           />
           <motion.div style={{ y, opacity }} className="relative z-20 max-w-4xl mx-auto">
@@ -267,7 +267,7 @@ export default function GudTekLanding() {
           <img
             src="/artwork/mascot4.png"
             alt="Gud Tek Mascot Decorative 4"
-            className="absolute bottom-6 right-6 w-64 md:w-80 opacity-80 rotate-[5deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+            className="hidden sm:block absolute bottom-6 right-6 sm:w-64 md:w-80 opacity-80 rotate-[5deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
             aria-hidden="true"
           />
           <div className="max-w-7xl mx-auto">
@@ -398,7 +398,7 @@ export default function GudTekLanding() {
           <img
             src="/artwork/mascot3.png"
             alt="Gud Tek Mascot Decorative 3"
-            className="absolute top-8 left-4 w-56 md:w-72 opacity-80 rotate-[-6deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+            className="hidden sm:block absolute top-8 left-4 sm:w-56 md:w-72 opacity-80 rotate-[-6deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
             aria-hidden="true"
           />
           <div className="max-w-4xl mx-auto">
