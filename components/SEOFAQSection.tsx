@@ -51,7 +51,7 @@ export default function SEOFAQSection() {
   }
 
   return (
-    <section className="py-16 px-4 bg-gradient-to-br from-gray-100 to-gray-200 relative">
+    <section className="py-20 px-4 bg-gradient-to-br from-orange-300/40 to-yellow-300/40 backdrop-filter backdrop-blur-sm relative">
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -79,7 +79,7 @@ export default function SEOFAQSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Card className="bg-white border border-gray-200 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+              <Card className={`bg-white border-2 transition-all duration-200 shadow-sm hover:shadow-lg ${openItems.includes(faq.id) ? 'border-orange-500' : 'border-orange-200 hover:border-orange-400'}`}>
                 <CardHeader className="pb-3">
                   <Button
                     variant="ghost"
@@ -90,21 +90,21 @@ export default function SEOFAQSection() {
                       {faq.question}
                     </CardTitle>
                     {openItems.includes(faq.id) ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                      <ChevronUp className="w-5 h-5 text-orange-600 flex-shrink-0" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                      <ChevronDown className="w-5 h-5 text-orange-600 flex-shrink-0" />
                     )}
                   </Button>
                 </CardHeader>
                 
                 {openItems.includes(faq.id) && (
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 bg-white/90 border-t border-orange-100">
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="text-gray-700 leading-relaxed"
+                      className="text-gray-800 leading-relaxed"
                     >
                       {faq.answer}
                     </motion.div>
@@ -122,7 +122,7 @@ export default function SEOFAQSection() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-center mt-12"
         >
-          <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 border-0 shadow-xl">
+          <Card className="bg-gradient-to-r from-orange-600 to-pink-600 border-0 shadow-xl">
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold text-white mb-4">
                 Still have questions?
@@ -133,7 +133,7 @@ export default function SEOFAQSection() {
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button 
                   asChild
-                  className="bg-white text-orange-600 hover:bg-gray-100 font-semibold"
+                  className="bg-white text-orange-600 hover:bg-gray-100 font-semibold border-2 border-orange-500"
                 >
                   <a href="https://t.me/gudtekclub" target="_blank" rel="noopener noreferrer">
                     Join Telegram
@@ -142,7 +142,7 @@ export default function SEOFAQSection() {
                 <Button 
                   asChild
                   variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-orange-600 font-semibold"
+                  className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-orange-600 font-semibold focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <a href="https://x.com/i/communities/1930994127895703976" target="_blank" rel="noopener noreferrer">
                     Follow X

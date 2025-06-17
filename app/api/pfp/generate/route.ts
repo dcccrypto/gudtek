@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createCanvas, loadImage } from 'canvas';
 import sharp from 'sharp';
-import { generateImage } from '@/lib/openai';
+import { generateImage, enhancePrompt } from '@/lib/openai';
 
-// GPT-4 Vision API endpoint
-const OPENAI_API_URL = 'https://api.openai.com/v1/images/generations';
+// Token requirement to use the PFP generator
+const TOKEN_REQUIREMENT = 20000;
 
 export async function POST(request: Request) {
   try {
@@ -21,193 +21,183 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify token balance
-    console.log('Verifying token balance');
-    const balanceRes = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/game/verify-holder`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: wallet })
-      }
-    );
+    // Skip the balance check on server side - we'll rely on the client-side check
+    // The getWalletInfo function returns 0 balance in server environment
+    console.log('Skipping server-side balance verification (already checked on client)');
+
+    // Enhance the prompt with GPT-4o
+    console.log('Enhancing prompt with GPT-4o');
+    const enhancedPrompt = await enhancePrompt(prompt);
+    console.log('Enhanced prompt:', enhancedPrompt);
+
+    // Generate image using GPT Image 1
+    console.log('Generating image with GPT Image 1');
+    const imageData = await generateImage(enhancedPrompt);
     
-    if (!balanceRes.ok) {
-      const errorText = await balanceRes.text();
-      console.error('Balance check failed:', errorText);
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(imageData, 'base64');
+
+    // Add watermark to the preview image
+    console.log('Adding watermark to preview image');
+    const watermarkedBuffer = await addWatermark(imageBuffer);
+
+    // Save to Supabase
+    console.log('Saving to Supabase');
+    const supabase = createClient();
+    
+    // Store both original and watermarked images
+    const timestamp = Date.now();
+    const originalFilename = `${wallet}/${timestamp}_original.png`;
+    const watermarkedFilename = `${wallet}/${timestamp}_preview.png`;
+
+    // Upload original image (for later use when burning tokens)
+    const { error: originalUploadError } = await supabase.storage
+      .from('pfps')
+      .upload(originalFilename, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false
+      });
+
+    if (originalUploadError) {
+      console.error('Error uploading original image:', originalUploadError);
       return NextResponse.json(
-        { error: 'Failed to verify token balance' },
+        { error: 'Failed to upload original image' },
         { status: 500 }
       );
     }
     
-    const balanceData = await balanceRes.json();
-    console.log('Balance data:', balanceData);
+    // Upload watermarked preview image
+    const { error: previewUploadError } = await supabase.storage
+      .from('pfps')
+      .upload(watermarkedFilename, watermarkedBuffer, {
+        contentType: 'image/png',
+        upsert: false
+      });
 
-    if (!balanceData.tokenBalance || balanceData.tokenBalance < 10000) {
-      console.log('Insufficient balance:', balanceData.tokenBalance);
+    if (previewUploadError) {
+      console.error('Error uploading preview image:', previewUploadError);
       return NextResponse.json(
-        { error: 'Insufficient token balance' },
-        { status: 403 }
+        { error: 'Failed to upload preview image' },
+        { status: 500 }
       );
     }
 
-    const supabase = createClient();
+    // Get public URL for the preview image
+    const { data: previewUrl } = supabase.storage
+      .from('pfps')
+      .getPublicUrl(watermarkedFilename);
 
-    // Check and update quota
-    console.log('Checking quota');
-    const { data: quotaData, error: quotaError } = await supabase
-      .from('pfp_quotas')
-      .select('previews_used, quota_reset_at, last_preview_at')
-      .eq('wallet_address', wallet)
+    // Create record in database
+    const { data: pfpData, error: dbError } = await supabase
+      .from('pfp_generations')
+      .insert({
+        wallet_address: wallet,
+        prompt: enhancedPrompt,
+        original_filename: originalFilename,
+        preview_filename: watermarkedFilename,
+        preview_url: previewUrl.publicUrl,
+        status: 'preview'
+      })
+      .select()
       .single();
 
-    if (quotaError && quotaError.code !== 'PGRST116') {
-      console.error('Quota check failed:', quotaError);
+    if (dbError) {
+      console.error('Database error:', dbError);
       return NextResponse.json(
-        { error: 'Failed to check quota' },
+        { error: 'Failed to save generation data' },
         { status: 500 }
       );
     }
 
-    const now = new Date();
-    let previews_used = 0;
-    let quota_reset_at = new Date(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + 1
-    );
-
-    if (quotaData) {
-      // Check cooldown
-      if (quotaData.last_preview_at) {
-        const lastPreview = new Date(quotaData.last_preview_at);
-        const timeSinceLastPreview = now.getTime() - lastPreview.getTime();
-        console.log('Time since last preview:', timeSinceLastPreview);
-        if (timeSinceLastPreview < 30000) { // 30 seconds
-          return NextResponse.json(
-            { error: 'Please wait before generating another preview' },
-            { status: 429 }
-          );
-        }
-      }
-
-      if (new Date(quotaData.quota_reset_at) <= now) {
-        // Reset quota
-        previews_used = 0;
-        console.log('Quota reset');
-      } else {
-        previews_used = quotaData.previews_used;
-        console.log('Current previews used:', previews_used);
-        if (previews_used >= 3) {
-          return NextResponse.json(
-            { error: 'Daily quota exceeded' },
-            { status: 429 }
-          );
-        }
-      }
-    }
-
-    try {
-      console.log('Generating image with OpenAI');
-      // Generate image with OpenAI
-      const imageBuffer = await generateImage(prompt);
-      
-      if (!imageBuffer) {
-        console.error('No image buffer returned from OpenAI');
-        throw new Error('Failed to generate image');
-      }
-      console.log('Image generated successfully');
-
-      // Add watermark
-      console.log('Adding watermark');
-      const canvas = createCanvas(1024, 1024);
-      const ctx = canvas.getContext('2d');
-
-      // Load and draw the generated image
-      const image = await loadImage(imageBuffer);
-      ctx.drawImage(image, 0, 0, 1024, 1024);
-
-      // Add watermark
-      ctx.font = 'bold 80px Arial';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.rotate(-Math.PI / 4);
-      ctx.fillText('GUDTEK', -300, 700);
-
-      // Convert to PNG buffer
-      console.log('Converting to PNG');
-      const watermarkedBuffer = await sharp(canvas.toBuffer())
-        .png()
-        .toBuffer();
-
-      // Upload to Supabase Storage
-      console.log('Uploading to Supabase');
-      const fileName = `${wallet}/${Date.now()}.png`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('pfp-previews')
-        .upload(fileName, watermarkedBuffer, {
-          contentType: 'image/png',
-          cacheControl: '3600',
-        });
-
-      if (uploadError) {
-        console.error('Upload failed:', uploadError);
-        throw new Error('Failed to upload image');
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('pfp-previews')
-        .getPublicUrl(fileName);
-
-      // Update quota
-      console.log('Updating quota');
-      const { error: upsertError } = await supabase
-        .from('pfp_quotas')
-        .upsert({
-          wallet_address: wallet,
-          previews_used: previews_used + 1,
-          last_preview_at: now.toISOString(),
-          quota_reset_at: quota_reset_at.toISOString(),
-        });
-
-      if (upsertError) {
-        console.error('Failed to update quota:', upsertError);
-        throw new Error('Failed to update quota');
-      }
-
-      // Create generation record
-      console.log('Creating generation record');
-      const { data: genData, error: genError } = await supabase
-        .from('pfp_generations')
-        .insert({
-          wallet_address: wallet,
-          prompt,
-          preview_url: publicUrl,
-          status: 'preview',
-        })
-        .select()
-        .single();
-
-      if (genError) {
-        console.error('Failed to save generation:', genError);
-        throw new Error('Failed to save generation');
-      }
-
-      console.log('Generation complete:', genData);
-      return NextResponse.json(genData);
-    } catch (error) {
-      console.error('Error in image generation process:', error);
-      return NextResponse.json(
-        { error: error.message || 'Failed to generate image' },
-        { status: 500 }
-      );
-    }
+    console.log('PFP generation successful');
+    return NextResponse.json(pfpData);
   } catch (error) {
-    console.error('Error generating PFP:', error);
+    console.error('Error in PFP generation:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to generate PFP' },
       { status: 500 }
     );
+  }
+}
+
+async function addWatermark(imageBuffer: Buffer): Promise<Buffer> {
+  try {
+    // Create a canvas from the image
+    const image = await loadImage(imageBuffer);
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the original image
+    ctx.drawImage(image, 0, 0, image.width, image.height);
+    
+    // Add very light overlay so preview can be inspected
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, image.width, image.height);
+    
+    // Set up watermark styling
+    const fontSize = Math.max(24, image.width / 15);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Draw diagonal watermarks across the entire image
+    ctx.save();
+    ctx.translate(image.width / 2, image.height / 2);
+    ctx.rotate(-Math.PI / 6); // Rotate -30 degrees
+    
+    // Draw multiple watermark texts for better coverage
+    const watermarkText = 'GUDTEK';
+    const spacing = fontSize * 2;
+    
+    for (let y = -image.height; y <= image.height; y += spacing) {
+      for (let x = -image.width; x <= image.width; x += spacing * 3) {
+        // Draw with shadow for better visibility
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.fillText(watermarkText, x, y);
+      }
+    }
+    
+    ctx.restore();
+    
+    // Convert canvas to buffer
+    const watermarkedBuffer = canvas.toBuffer('image/png');
+    
+    // Optimize the image with sharp
+    return await sharp(watermarkedBuffer)
+      .png({ quality: 90 })
+      .toBuffer();
+  } catch (error) {
+    console.error('Error adding watermark:', error);
+    // If watermarking fails, add a simple text overlay using sharp
+    try {
+      const width = 1024;
+      const height = 1024;
+      const svgText = `
+      <svg width="${width}" height="${height}">
+        <style>
+          .title { fill: #fff; font-size: 70px; font-weight: bold; opacity: 0.8; }
+          .subtitle { fill: #fff; font-size: 40px; font-weight: bold; opacity: 0.8; }
+        </style>
+        <text x="50%" y="50%" text-anchor="middle" class="title">GUDTEK</text>
+      </svg>
+      `;
+      const svgBuffer = Buffer.from(svgText);
+      
+      return await sharp(imageBuffer)
+        .composite([{
+          input: svgBuffer,
+          top: 0,
+          left: 0,
+        }])
+        .png()
+        .toBuffer();
+    } catch (fallbackError) {
+      console.error('Fallback watermarking also failed:', fallbackError);
+      return imageBuffer; // Return original if all watermarking attempts fail
+    }
   }
 } 

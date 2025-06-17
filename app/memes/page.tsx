@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Heart, Upload, Wallet, Trophy, Calendar, Users, AlertCircle, CheckCircle, Menu, X, Home, MessageSquare } from 'lucide-react'
+import { Heart, Upload, Wallet, Trophy, Calendar, Users, AlertCircle, CheckCircle, Home, MessageSquare } from 'lucide-react'
+import Navbar from '@/components/Navbar'
 import { supabase, type Meme, type User, type WeeklyContest, uploadMemeImage } from '@/lib/supabase'
 import { FileUpload } from '@/components/ui/file-upload'
 import FeedbackForm from '@/components/FeedbackForm'
@@ -39,7 +40,7 @@ export default function MemesPage() {
   const [loading, setLoading] = useState(true)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [votingLoading, setVotingLoading] = useState<string | null>(null)
-  const [isNavOpen, setIsNavOpen] = useState(false)
+  // Navbar state is now handled by the Navbar component
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   
   // Wallet info state
@@ -434,21 +435,7 @@ export default function MemesPage() {
         </div>
         
         {/* Skeleton Navbar */}
-        <nav className="fixed top-0 left-0 right-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
-                <div className="h-8 w-8 bg-gray-300 rounded-full animate-pulse mr-2" />
-                <div className="h-6 w-20 bg-gray-300 rounded animate-pulse" />
-              </div>
-              <div className="hidden md:flex space-x-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-4 w-16 bg-gray-300 rounded animate-pulse" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </nav>
+        <div className="fixed top-0 left-0 right-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30 h-16"></div>
 
         <div className="pt-16 relative z-10">
           {/* Skeleton Hero */}
@@ -528,80 +515,8 @@ export default function MemesPage() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
       </div>
 
-      {/* Navbar - Matching main site */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              {/* Logo/Site Title */}
-              <Link href="/" className="flex-shrink-0 flex items-center">
-                <img
-                  src="/images/gudtek-logo.png"
-                  alt="Gud Tek Logo"
-                  className="h-8 w-8 rounded-full mr-2"
-                  width={32}
-                  height={32}
-                />
-                <span className="text-gray-900 font-black text-xl tracking-tight">GUD TEK</span>
-              </Link>
-            </div>
-            {/* Desktop Nav */}
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                      item.name === 'Memes' 
-                        ? 'bg-gray-900/20 text-gray-900 font-bold' 
-                        : 'text-gray-800 hover:text-gray-900'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            {/* Mobile Nav Button */}
-            <div className="-mr-2 flex md:hidden">
-              <Button
-                onClick={() => setIsNavOpen(!isNavOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 bg-transparent hover:bg-transparent"
-                aria-controls="mobile-menu"
-                aria-expanded="false"
-              >
-                <span className="sr-only">Open main menu</span>
-                {!isNavOpen ? (
-                  <Menu className="block h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <X className="block h-6 w-6" aria-hidden="true" />
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className={`${isNavOpen ? 'block' : 'hidden'} md:hidden`} id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/20 backdrop-filter backdrop-blur-lg border-t border-orange-400/30">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
-                  item.name === 'Memes' 
-                    ? 'bg-gray-900/20 text-gray-900 font-bold' 
-                    : 'text-gray-800 hover:text-gray-900'
-                }`}
-                onClick={() => setIsNavOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </nav>
+      {/* Global Navbar Component */}
+      <Navbar />
 
       {/* Main Content */}
       <div className="pt-16 relative z-10">

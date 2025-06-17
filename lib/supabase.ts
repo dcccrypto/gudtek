@@ -438,24 +438,68 @@ export const getOrCreateGameUser = async (walletAddress: string, tokenBalance: n
 
 export const updateUserTokenBalance = async (walletAddress: string, balance: number) => {
   try {
-    const minBalance = parseFloat(await getGameSetting('min_token_balance') || '10000')
+    console.log(`Updating token balance for ${walletAddress} to ${balance}`);
     
-    const { data, error } = await supabase
+    // Ensure balance is a valid number
+    if (isNaN(balance)) {
+      console.error('Invalid balance value:', balance);
+      throw new Error('Invalid balance value');
+    }
+    
+    // Get current user first to check if they exist
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('game_users')
+      .select('id, token_balance')
+      .eq('wallet_address', walletAddress)
+      .single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" error
+      console.error('Error fetching user before update:', fetchError);
+      throw fetchError;
+    }
+    
+    if (!existingUser) {
+      // User doesn't exist, create a new one
+      console.log(`User ${walletAddress} not found, creating new user`);
+      const { data: newUser, error: createError } = await supabase
+        .from('game_users')
+        .insert({
+          wallet_address: walletAddress,
+          token_balance: balance,
+          last_balance_check: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('Error creating new user:', createError);
+        throw createError;
+      }
+      
+      return newUser;
+    }
+    
+    // Update existing user
+    const { data: updatedUser, error: updateError } = await supabase
       .from('game_users')
       .update({
         token_balance: balance,
-        is_verified: balance >= minBalance,
         last_balance_check: new Date().toISOString()
       })
       .eq('wallet_address', walletAddress)
       .select()
-      .single()
+      .single();
 
-    if (error) throw error
-    return data
+    if (updateError) {
+      console.error('Error updating user token balance:', updateError);
+      throw updateError;
+    }
+    
+    console.log(`Successfully updated balance for ${walletAddress} from ${existingUser.token_balance} to ${balance}`);
+    return updatedUser;
   } catch (error) {
-    console.error('Error updating user token balance:', error)
-    throw error
+    console.error('Error in updateUserTokenBalance:', error);
+    throw error;
   }
 }
 

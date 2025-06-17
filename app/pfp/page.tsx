@@ -1,26 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useToast } from '@/components/ui/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Menu, X, Trophy } from 'lucide-react';
+import { Menu, X, Trophy, Sparkles, AlertCircle, CheckCircle, Download, Wallet, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { formatTokenBalance, formatSolBalance, getWalletInfo } from '@/lib/wallet';
+import { PublicKey, Transaction } from '@solana/web3.js';
+import { getAssociatedTokenAddress, createBurnCheckedInstruction } from '@solana/spl-token';
 
-interface PFPQuota {
-  previews_used: number;
-  last_preview_at: string | null;
-}
+// Minimum token requirement to access PFP generator
+const MIN_GUDTEK_BALANCE = 20000;
+
+// Token burn amount for downloading PFP
+const USD_BURN_AMOUNT = 1;
+
+const GUDTEK_MINT = new PublicKey('5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk');
+const DECIMALS = 6;
 
 interface PFPGeneration {
   id: string;
@@ -30,28 +37,29 @@ interface PFPGeneration {
 }
 
 export default function PFPGenerator() {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, sendTransaction } = useWallet();
   const { toast } = useToast();
+  const { connection } = useConnection();
   const [isLoading, setIsLoading] = useState(false);
-  const [quota, setQuota] = useState<PFPQuota | null>(null);
-  const [cooldown, setCooldown] = useState(0);
   const [tokenBalance, setTokenBalance] = useState(0);
+  const [solBalance, setSolBalance] = useState(0);
   const [generations, setGenerations] = useState<PFPGeneration[]>([]);
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [prompt, setPrompt] = useState("Gud Tek Mascot");
-  const basePrompt = "Gud Tek Mascot";
+  const [prompt, setPrompt] = useState("");
+  const [currentPreview, setCurrentPreview] = useState<PFPGeneration | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const PREVIEW_LIMIT = 3;
+  // Count active previews that haven't been downloaded yet
+  const previewsUsed = generations.filter((g) => g.status === 'preview').length;
+  const previewsRemaining = Math.max(0, PREVIEW_LIMIT - previewsUsed);
 
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Game", href: "/game" },
     { name: "Announcements", href: "/announcements" },
-    { name: "Hackathon", href: "/#hackathon" },
-    { name: "Tokenomics", href: "/#tokenomics" },
-    { name: "How to Buy", href: "/#how-to-buy" },
-    { name: "Chart", href: "/#chart" },
     { name: "Memes", href: "/memes" },
-    { name: "Community", href: "/#community" },
-    { name: "About", href: "/#about" },
+    { name: "PFP", href: "/pfp" },
   ];
 
   const supabase = createClient();
@@ -61,34 +69,12 @@ export default function PFPGenerator() {
 
     const fetchData = async () => {
       try {
-        // Get token balance
-        const balanceRes = await fetch(`/api/game/verify-holder`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: publicKey.toString() })
-        });
+        setWalletLoading(true);
         
-        if (!balanceRes.ok) {
-          throw new Error('Failed to fetch balance');
-        }
-        const balanceText = await balanceRes.text();
-        let balanceData;
-        try {
-          balanceData = JSON.parse(balanceText);
-        } catch (e) {
-          console.error('Failed to parse balance response:', balanceText);
-          balanceData = { tokenBalance: 0 };
-        }
-        setTokenBalance(balanceData.tokenBalance || 0);
-
-        // Get quota
-        const { data: quotaData } = await supabase
-          .from('pfp_quotas')
-          .select('previews_used, last_preview_at')
-          .eq('wallet_address', publicKey.toString())
-          .single();
-        
-        setQuota(quotaData || { previews_used: 0, last_preview_at: null });
+        // Use the same getWalletInfo function as the game and memes pages
+        const info = await getWalletInfo(publicKey.toString());
+        setTokenBalance(info.gudtekBalance);
+        setSolBalance(info.solBalance);
 
         // Get generations
         const { data: genData } = await supabase
@@ -105,42 +91,20 @@ export default function PFPGenerator() {
           description: 'Failed to load your data. Please try again.',
           variant: 'destructive',
         });
+      } finally {
+        setWalletLoading(false);
       }
     };
 
     fetchData();
   }, [connected, publicKey]);
 
-  useEffect(() => {
-    if (!quota?.last_preview_at) return;
-
-    const lastPreview = new Date(quota.last_preview_at).getTime();
-    const updateCooldown = () => {
-      const now = Date.now();
-      const diff = Math.max(0, 30000 - (now - lastPreview));
-      setCooldown(Math.ceil(diff / 1000));
-    };
-
-    const interval = setInterval(updateCooldown, 1000);
-    updateCooldown();
-
-    return () => clearInterval(interval);
-  }, [quota?.last_preview_at]);
-
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    if (newValue.startsWith(basePrompt)) {
-      setPrompt(newValue);
-    } else {
-      setPrompt(basePrompt);
-    }
+    setPrompt(e.target.value);
   };
 
   const generatePreview = async () => {
-    console.log('Generate preview clicked');
-    
     if (!connected || !publicKey) {
-      console.log('Wallet not connected');
       toast({
         title: 'Connect Wallet',
         description: 'Please connect your wallet first.',
@@ -149,41 +113,43 @@ export default function PFPGenerator() {
       return;
     }
 
-    if (tokenBalance < 10000) {
-      console.log('Insufficient balance:', tokenBalance);
+    if (tokenBalance < MIN_GUDTEK_BALANCE) {
       toast({
         title: 'Insufficient Balance',
-        description: 'You need at least 10,000 $GUDTEK to use the PFP generator.',
+        description: `You need at least ${MIN_GUDTEK_BALANCE.toLocaleString()} $GUDTEK to use the PFP generator.`,
         variant: 'destructive',
       });
       return;
     }
 
-    if (quota && quota.previews_used >= 3) {
-      console.log('Daily quota exceeded:', quota.previews_used);
+    if (!prompt.trim()) {
       toast({
-        title: 'Daily Quota Exceeded',
-        description: 'You have used all your free previews for today.',
+        title: 'Empty Prompt',
+        description: 'Please enter a prompt to generate an image.',
         variant: 'destructive',
       });
       return;
     }
 
-    if (cooldown > 0) {
-      console.log('Cooldown active:', cooldown);
+    if (previewsRemaining <= 0) {
       toast({
-        title: 'Cooldown Active',
-        description: `Please wait ${cooldown} seconds before generating another preview.`,
+        title: 'Preview Limit Reached',
+        description: `You have used all ${PREVIEW_LIMIT} preview slots. Download or delete an existing preview to generate more.`,
         variant: 'destructive',
       });
       return;
     }
 
-    console.log('Starting generation with prompt:', prompt);
     setIsLoading(true);
+    setCurrentPreview(null);
 
     try {
-      console.log('Making API request');
+      // Show toast to indicate generation has started
+      toast({
+        title: 'Generating Image',
+        description: 'This may take up to 30 seconds. Please wait...',
+      });
+
       const res = await fetch('/api/pfp/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -191,34 +157,21 @@ export default function PFPGenerator() {
           prompt: prompt,
           wallet: publicKey.toString() 
         }),
+        // Increase timeout for image generation
+        timeout: 60000,
       });
 
-      console.log('API response status:', res.status);
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error('API error response:', errorText);
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { error: 'Unknown error occurred' };
-        }
+        const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to generate preview');
       }
 
       const data = await res.json();
-      console.log('Generation successful:', data);
       
-      // Refresh data
-      const { data: quotaData } = await supabase
-        .from('pfp_quotas')
-        .select('previews_used, last_preview_at')
-        .eq('wallet_address', publicKey.toString())
-        .single();
-      
-      setQuota(quotaData);
+      // Set as current preview
+      setCurrentPreview(data);
 
-      // Add new generation to the list
+      // Add to generations list
       setGenerations(prev => [data, ...prev]);
 
       toast({
@@ -228,8 +181,8 @@ export default function PFPGenerator() {
     } catch (error) {
       console.error('Error generating preview:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to generate preview. Please try again.',
+        title: 'Generation Failed',
+        description: error.message || 'Failed to generate preview. Please try again with a different prompt.',
         variant: 'destructive',
       });
     } finally {
@@ -237,29 +190,90 @@ export default function PFPGenerator() {
     }
   };
 
-  const downloadHQ = async (id: string) => {
-    if (!connected || !publicKey) return;
+  const downloadPFP = async (id: string) => {
+    if (!connected || !publicKey) {
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // skip cached balance check; rely on on-chain burn
+
+    setIsDownloading(true);
 
     try {
+      // fetch live price
+      const priceRes = await fetch('https://api.dexscreener.com/tokens/v1/solana/5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk');
+      const priceJson = await priceRes.json();
+      const price = parseFloat(priceJson?.[0]?.priceUsd || '0');
+      if (!price) throw new Error('Unable to fetch token price');
+      const tokensToBurn = Math.ceil(USD_BURN_AMOUNT / price);
+
+      // build burn
+      const ata = await getAssociatedTokenAddress(GUDTEK_MINT, publicKey as PublicKey);
+      const ix = createBurnCheckedInstruction(ata, GUDTEK_MINT, publicKey as PublicKey, tokensToBurn * 10 ** DECIMALS, DECIMALS);
+      const tx = new Transaction().add(ix);
+      const sig = await sendTransaction(tx, connection);
+      await connection.confirmTransaction(sig, 'confirmed');
+
       const res = await fetch(`/api/pfp/download/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: publicKey.toString() }),
+        body: JSON.stringify({ wallet: publicKey.toString(), txSignature: sig, tokenAmount: tokensToBurn }),
       });
 
-      if (!res.ok) throw new Error('Failed to download');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to download');
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `gudtek-pfp-${id}.png`;
+      a.download = 'GUDTEK_PFP.png';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      // Refresh generations
+      // Refresh data after download
+      refreshData();
+
+      toast({
+        title: 'Success',
+        description: `Downloaded! Burned ${tokensToBurn.toLocaleString()} $GUDTEK on-chain`,
+        action: (
+          <ToastAction altText="View Transaction" onClick={() => window.open(`https://solscan.io/tx/${sig}`, '_blank')}>View Tx</ToastAction>
+        )
+      });
+    } catch (error) {
+      console.error('Error downloading PFP:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to download. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const refreshData = async () => {
+    if (!connected || !publicKey) return;
+    
+    try {
+      setWalletLoading(true);
+      
+      // Use getWalletInfo directly for consistent balance checking
+      const info = await getWalletInfo(publicKey.toString());
+      setTokenBalance(info.gudtekBalance);
+      setSolBalance(info.solBalance);
+
+      // Get generations
       const { data: genData } = await supabase
         .from('pfp_generations')
         .select('id, preview_url, status, created_at')
@@ -267,19 +281,15 @@ export default function PFPGenerator() {
         .order('created_at', { ascending: false });
 
       setGenerations(genData || []);
-
-      toast({
-        title: 'Download Complete',
-        description: 'Your high-quality PFP has been downloaded.',
-      });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to download. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Error refreshing data:', error);
+    } finally {
+      setWalletLoading(false);
     }
   };
+
+  const canUseGenerator = connected && publicKey && tokenBalance >= MIN_GUDTEK_BALANCE;
+  const canGeneratePreview = canUseGenerator && previewsRemaining > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
@@ -312,40 +322,42 @@ export default function PFPGenerator() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="text-gray-800 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
+                      item.href === '/pfp'
+                        ? 'bg-orange-600 text-white'
+                        : 'text-gray-900 hover:bg-orange-500/20'
+                    }`}
                   >
                     {item.name}
                   </Link>
                 ))}
               </div>
             </div>
-            {/* Mobile Nav Button */}
-            <div className="-mr-2 flex md:hidden">
+            {/* Mobile menu button */}
+            <div className="md:hidden">
               <Button
+                variant="ghost"
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-900 hover:text-white hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
                 onClick={() => setIsNavOpen(!isNavOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 bg-transparent hover:bg-transparent"
-                aria-controls="mobile-menu"
-                aria-expanded="false"
               >
-                <span className="sr-only">Open main menu</span>
-                {!isNavOpen ? (
-                  <Menu className="block h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <X className="block h-6 w-6" aria-hidden="true" />
-                )}
+                {isNavOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
             </div>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        <div className={`${isNavOpen ? 'block' : 'hidden'} md:hidden`} id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/20 backdrop-filter backdrop-blur-lg border-t border-orange-400/30">
+        {/* Mobile menu */}
+        {isNavOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-800 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    item.href === '/pfp'
+                      ? 'bg-orange-600 text-white'
+                      : 'text-gray-900 hover:bg-orange-500/20'
+                  }`}
                 onClick={() => setIsNavOpen(false)}
               >
                 {item.name}
@@ -353,76 +365,163 @@ export default function PFPGenerator() {
             ))}
           </div>
         </div>
+        )}
       </nav>
 
-      {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="container mx-auto px-4 pt-24 pb-12">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm border-2 border-gray-900/20 rounded-full px-6 py-3 mb-6 shadow-xl">
-              <Trophy className="w-6 h-6 text-gray-900" />
-              <span className="text-lg font-black text-gray-900">AI PFP GENERATOR</span>
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">$GUDTEK Profile Picture Generator</h1>
+            <p className="text-lg text-gray-800">Create your custom GUD TEK profile picture</p>
+          </div>
+
+          {/* Wallet Connection Section - Styled like the game page */}
+          <div className="mb-8">
+            <Card className="bg-white/80 backdrop-blur-md border-orange-300 shadow-lg overflow-hidden">
+              <CardContent className="p-6">
+                {!connected ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <div className="p-3 bg-orange-100 rounded-full">
+                      <Wallet className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Connect Your Wallet</h3>
+                      <p className="text-gray-700 mb-4">
+                        Connect your Solana wallet to generate and download custom profile pictures.
+                      </p>
+                      <div className="flex justify-center">
+                        <WalletMultiButton className="!bg-orange-500 hover:!bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col md:flex-row items-center justify-between">
+                    <div className="flex flex-col md:flex-row items-center mb-4 md:mb-0">
+                      <div className="p-3 bg-orange-100 rounded-full mr-0 md:mr-4 mb-3 md:mb-0">
+                        <Wallet className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <div className="flex items-center">
+                          <h3 className="text-lg font-bold text-gray-900 mr-2">Wallet Connected</h3>
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Active
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-1">
+                          {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex items-center bg-orange-100 px-3 py-2 rounded-lg">
+                        <img
+                          src="/images/gudtek-logo.png"
+                          alt="GUDTEK"
+                          className="h-5 w-5 rounded-full mr-2"
+                        />
+                        <div>
+                          <p className="text-xs text-gray-600">$GUDTEK Balance</p>
+                          <p className="font-bold text-gray-900">
+                            {walletLoading ? (
+                              <span className="inline-block w-16 h-4 bg-gray-200 animate-pulse rounded"></span>
+                            ) : (
+                              formatTokenBalance(tokenBalance)
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center bg-orange-100 px-3 py-2 rounded-lg">
+                        <img
+                          src="/game/sol.png"
+                          alt="SOL"
+                          className="h-5 w-5 mr-2"
+                        />
+                        <div>
+                          <p className="text-xs text-gray-600">SOL Balance</p>
+                          <p className="font-bold text-gray-900">
+                            {walletLoading ? (
+                              <span className="inline-block w-12 h-4 bg-gray-200 animate-pulse rounded"></span>
+                            ) : (
+                              formatSolBalance(solBalance)
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Status Alert */}
+          {connected && (
+            <div className="mb-8">
+              {tokenBalance < MIN_GUDTEK_BALANCE ? (
+                <Alert className="bg-red-50 border-red-300 text-red-800">
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                  <AlertDescription>
+                    You need at least {MIN_GUDTEK_BALANCE.toLocaleString()} $GUDTEK tokens to use the PFP generator.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert className="bg-green-50 border-green-300 text-green-800">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                  <AlertDescription>
+                    You have enough $GUDTEK tokens to use the PFP generator. Generating a preview is free, but downloading costs ${USD_BURN_AMOUNT} USD worth of $GUDTEK.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight" style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}>
-              Create Your PFP
-            </h1>
-            <p className="text-xl font-bold text-gray-800 max-w-2xl mx-auto">
-              Create unique profile pictures with our AI-powered generator. Requires ≥10,000 $GUDTEK to access.
-            </p>
-          </motion.div>
+          )}
 
           {/* Content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Generator Section */}
+            <div className="space-y-6">
             <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-yellow-500" />
+                    Create New PFP
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
               <div className="space-y-4">
                 {!connected ? (
-                  <div className="text-center space-y-4">
+                      <div className="text-center space-y-4 py-8">
                     <p className="text-lg font-semibold text-gray-900">Connect your wallet to start generating PFPs</p>
-                    <WalletMultiButton className="!bg-orange-500 hover:!bg-orange-600 transition mx-auto" />
+                        <WalletMultiButton className="!bg-orange-500 hover:!bg-orange-600 !border !border-gray-900 !rounded !font-bold !shadow-sm !px-6 !py-3 !text-sm !h-12 !min-w-0 mx-auto" />
                   </div>
                 ) : (
                   <>
                     <div className="flex flex-col space-y-2">
-                      <label className="text-gray-900 font-semibold">Prompt</label>
+                          <label className="text-gray-900 font-semibold">Enter your prompt</label>
                       <Textarea
                         value={prompt}
                         onChange={handlePromptChange}
-                        onFocus={(e) => {
-                          // Place cursor at end when focusing
-                          const len = e.target.value.length;
-                          e.target.setSelectionRange(len, len);
-                        }}
+                            placeholder="Describe the PFP you want to generate..."
                         className="min-h-[100px] bg-[#ffd96633] border-2 border-[#ffd966] text-gray-900 rounded-xl text-lg font-medium px-4 py-3"
                       />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-gray-900">Daily Previews</p>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={((quota?.previews_used || 0) / 3) * 100} className="w-32" />
-                          <span className="text-sm text-gray-700">{quota?.previews_used || 0}/3</span>
-                        </div>
-                      </div>
-
-                      {cooldown > 0 && (
-                        <Badge variant="outline" className="bg-white/20">
-                          Cooldown: {cooldown}s
-                        </Badge>
-                      )}
+                          <p className="text-sm text-gray-700">
+                            Our AI will enhance your prompt to create the best possible image.
+                          </p>
                     </div>
 
                     <Button
                       onClick={generatePreview}
-                      disabled={isLoading || cooldown > 0 || (quota?.previews_used || 0) >= 3}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg py-6 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={isLoading || !prompt.trim() || !canGeneratePreview}
+                          className={`
+                            w-full font-bold text-lg py-6 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed
+                            ${canGeneratePreview 
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-2 border-green-300 shadow-green-500/50' 
+                              : 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-200 border-2 border-gray-300 shadow-gray-500/30 cursor-not-allowed'
+                            }
+                          `}
                     >
                       {isLoading ? (
                         <div className="flex items-center justify-center gap-2">
@@ -430,55 +529,131 @@ export default function PFPGenerator() {
                           <span>Generating...</span>
                         </div>
                       ) : (
-                        'Generate Preview'
+                            <div className="flex items-center justify-center gap-2">
+                              <Sparkles className="w-5 h-5" />
+                              <span>Generate Preview</span>
+                            </div>
                       )}
                     </Button>
                   </>
                 )}
               </div>
+                </CardContent>
             </Card>
+              
+              {/* Current Preview */}
+              {currentPreview && (
+                <Card className="overflow-hidden bg-white/10 backdrop-blur-sm border-white/20">
+                  <div className="relative aspect-square">
+                    <Image 
+                      src={currentPreview.preview_url} 
+                      alt="Generated PFP" 
+                      fill 
+                      className="object-cover"
+                    />
+                    <Badge className="absolute top-2 right-2 bg-orange-500 text-white">
+                      Preview
+                    </Badge>
+                  </div>
+                  <CardContent className="p-4 space-y-3">
+                    <p className="text-sm text-gray-800 font-medium">
+                      Burn ${USD_BURN_AMOUNT} worth of $GUDTEK to download without watermark
+                    </p>
+                    {connected ? (
+                      <Button 
+                        onClick={() => downloadPFP(currentPreview.id)} 
+                        disabled={isDownloading || tokenBalance < USD_BURN_AMOUNT}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                      >
+                        {isDownloading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Burn ${USD_BURN_AMOUNT} $GUDTEK
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <WalletMultiButton className="!bg-orange-500 hover:!bg-orange-600 !border !border-gray-900 !rounded !font-bold !shadow-sm !w-full !py-2" />
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
             {/* Gallery Section */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6">
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-gray-900">Your Generations</h3>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  Your PFP Gallery
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {connected ? (
+                  generations.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
                   {generations.map((gen) => (
                     <div key={gen.id} className="relative group">
-                      <div className="aspect-square relative overflow-hidden rounded-lg">
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-300 group-hover:border-orange-500 transition-all">
                         <Image
                           src={gen.preview_url}
                           alt="Generated PFP"
                           fill
                           className="object-cover"
                         />
+                            {gen.status === 'preview' ? (
+                              <div className="absolute bottom-0 right-0 bg-orange-500 text-white px-2 py-1 text-xs font-bold">
+                                PREVIEW
+                              </div>
+                            ) : (
+                              <div className="absolute bottom-0 right-0 bg-green-500 text-white px-2 py-1 text-xs font-bold">
+                                DOWNLOADED
+                              </div>
+                            )}
+                          </div>
+                          
                         {gen.status === 'preview' && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-lg">
                             <Button
-                              onClick={() => downloadHQ(gen.id)}
-                              className="bg-orange-500 hover:bg-orange-600 text-white"
+                                onClick={() => downloadPFP(gen.id)}
+                                disabled={isDownloading || tokenBalance < USD_BURN_AMOUNT}
+                                className="bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                                size="sm"
                             >
-                              Download HQ
+                                <Download className="h-4 w-4 mr-1" />
+                                Download
                             </Button>
                           </div>
                         )}
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={`absolute top-2 right-2 ${
-                          gen.status === 'downloaded' ? 'bg-green-500' : 'bg-orange-500'
-                        } text-white`}
-                      >
-                        {gen.status === 'downloaded' ? 'HQ' : 'Preview'}
-                      </Badge>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-700">No generations yet. Create your first PFP!</p>
                 </div>
+                  )
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-700 mb-4">Connect your wallet to view your generations</p>
+                    <WalletMultiButton className="!bg-orange-500 hover:!bg-orange-600 !border !border-gray-900 !rounded !font-bold !shadow-sm !px-6 !py-3 !text-sm !h-12 !min-w-0 mx-auto" />
               </div>
+                )}
+                {connected && (
+                  <p className="text-sm text-gray-700 font-semibold mb-2">
+                    Previews remaining: {previewsRemaining} / {PREVIEW_LIMIT}
+                  </p>
+                )}
+              </CardContent>
             </Card>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 } 
