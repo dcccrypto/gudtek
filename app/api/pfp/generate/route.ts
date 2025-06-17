@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createCanvas, loadImage } from 'canvas';
 import sharp from 'sharp';
 import { generateImage, enhancePrompt } from '@/lib/openai';
 
@@ -37,7 +36,7 @@ export async function POST(request: Request) {
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(imageData, 'base64');
 
-    // Add watermark to the preview image
+    // Add watermark to the preview image (SVG overlay)
     console.log('Adding watermark to preview image');
     const watermarkedBuffer = await addWatermark(imageBuffer);
 
@@ -122,82 +121,24 @@ export async function POST(request: Request) {
 
 async function addWatermark(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    // Create a canvas from the image
-    const image = await loadImage(imageBuffer);
-    const canvas = createCanvas(image.width, image.height);
-    const ctx = canvas.getContext('2d');
-    
-    // Draw the original image
-    ctx.drawImage(image, 0, 0, image.width, image.height);
-    
-    // Add very light overlay so preview can be inspected
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-    ctx.fillRect(0, 0, image.width, image.height);
-    
-    // Set up watermark styling
-    const fontSize = Math.max(24, image.width / 15);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.font = `bold ${fontSize}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    // Draw diagonal watermarks across the entire image
-    ctx.save();
-    ctx.translate(image.width / 2, image.height / 2);
-    ctx.rotate(-Math.PI / 6); // Rotate -30 degrees
-    
-    // Draw multiple watermark texts for better coverage
-    const watermarkText = 'GUDTEK';
-    const spacing = fontSize * 2;
-    
-    for (let y = -image.height; y <= image.height; y += spacing) {
-      for (let x = -image.width; x <= image.width; x += spacing * 3) {
-        // Draw with shadow for better visibility
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-        ctx.fillText(watermarkText, x, y);
-      }
-    }
-    
-    ctx.restore();
-    
-    // Convert canvas to buffer
-    const watermarkedBuffer = canvas.toBuffer('image/png');
-    
-    // Optimize the image with sharp
-    return await sharp(watermarkedBuffer)
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+        <defs>
+          <pattern id="watermark" patternUnits="userSpaceOnUse" width="400" height="200" patternTransform="rotate(-30 0 0)">
+            <text x="0" y="150" font-size="120" font-weight="bold" fill="rgba(255,255,255,0.25)">GUDTEK</text>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#watermark)" />
+      </svg>`;
+
+    const svgBuffer = Buffer.from(svg);
+
+    return await sharp(imageBuffer)
+      .composite([{ input: svgBuffer, blend: 'overlay' }])
       .png({ quality: 90 })
       .toBuffer();
   } catch (error) {
-    console.error('Error adding watermark:', error);
-    // If watermarking fails, add a simple text overlay using sharp
-    try {
-      const width = 1024;
-      const height = 1024;
-      const svgText = `
-      <svg width="${width}" height="${height}">
-        <style>
-          .title { fill: #fff; font-size: 70px; font-weight: bold; opacity: 0.8; }
-          .subtitle { fill: #fff; font-size: 40px; font-weight: bold; opacity: 0.8; }
-        </style>
-        <text x="50%" y="50%" text-anchor="middle" class="title">GUDTEK</text>
-      </svg>
-      `;
-      const svgBuffer = Buffer.from(svgText);
-      
-      return await sharp(imageBuffer)
-        .composite([{
-          input: svgBuffer,
-          top: 0,
-          left: 0,
-        }])
-        .png()
-        .toBuffer();
-    } catch (fallbackError) {
-      console.error('Fallback watermarking also failed:', fallbackError);
-      return imageBuffer; // Return original if all watermarking attempts fail
-    }
+    console.error('Watermark overlay failed:', error);
+    return imageBuffer;
   }
 } 
