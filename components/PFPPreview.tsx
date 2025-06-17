@@ -89,9 +89,10 @@ export default function PFPPreview({ imageUrl, id, onBurnComplete }: PFPPreviewP
       if (onBurnComplete) onBurnComplete()
     } catch (error) {
       console.error('Error downloading PFP:', error)
+      const errMsg = error instanceof Error ? error.message : 'Failed to download PFP. Please try again.'
       toast({
         title: "Error",
-        description: error.message || "Failed to download PFP. Please try again.",
+        description: errMsg,
         variant: "destructive"
       })
     } finally {
