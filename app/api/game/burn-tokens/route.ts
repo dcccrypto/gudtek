@@ -153,9 +153,9 @@ export async function POST(request: NextRequest) {
       .from('game_users')
       .select('token_balance')
       .eq('wallet_address', walletAddress)
-      .single();
+      .maybeSingle();
 
-    if (userError) {
+    if (userError && userError.code !== 'PGRST116') {
       console.error('Error fetching user data:', userError);
       return NextResponse.json(
         { error: 'Failed to fetch user data' },
