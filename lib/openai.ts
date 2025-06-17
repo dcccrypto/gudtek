@@ -33,7 +33,7 @@ export async function enhancePrompt(userPrompt: string): Promise<string> {
     console.log('Enhancing prompt with GPT-4o:', userPrompt);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
