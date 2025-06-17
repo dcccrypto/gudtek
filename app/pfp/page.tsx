@@ -184,10 +184,10 @@ export default function PFPGenerator() {
         description: 'Your PFP preview has been generated!',
       });
     } catch (error) {
-      console.error('Error generating preview:', error);
+      const errMsg = error instanceof Error ? error.message : 'Failed to generate preview. Please try again with a different prompt.';
       toast({
         title: 'Generation Failed',
-        description: error.message || 'Failed to generate preview. Please try again with a different prompt.',
+        description: errMsg,
         variant: 'destructive',
       });
     } finally {
@@ -256,10 +256,10 @@ export default function PFPGenerator() {
         )
       });
     } catch (error) {
-      console.error('Error downloading PFP:', error);
+      const errMsg2 = error instanceof Error ? error.message : 'Failed to download. Please try again.';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to download. Please try again.',
+        description: errMsg2,
         variant: 'destructive',
       });
     } finally {
