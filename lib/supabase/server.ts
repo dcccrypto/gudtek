@@ -14,8 +14,5 @@ export const createClient = () => {
       persistSession: false,
       autoRefreshToken: false,
     },
-    cookies: {
-      get: (key) => cookies().get(key)?.value,
-    },
   });
 }; 
