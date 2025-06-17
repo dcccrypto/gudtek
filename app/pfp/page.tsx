@@ -29,9 +29,12 @@ const USD_BURN_AMOUNT = 1;
 const GUDTEK_MINT = new PublicKey('5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk');
 const DECIMALS = 6;
 
+const SUPABASE_STORAGE_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/pfps`; // trailing no slash needed
+
 interface PFPGeneration {
   id: string;
   preview_url: string;
+  original_filename: string;
   status: 'preview' | 'downloaded';
   created_at: string;
 }
@@ -59,7 +62,7 @@ export default function PFPGenerator() {
     { name: "Game", href: "/game" },
     { name: "Announcements", href: "/announcements" },
     { name: "Memes", href: "/memes" },
-    { name: "PFP", href: "/pfp" },
+    { name: "GUD AI", href: "/pfp" },
   ];
 
   const supabase = createClient();
@@ -70,19 +73,21 @@ export default function PFPGenerator() {
     const fetchData = async () => {
       try {
         setWalletLoading(true);
-        
-        // Use the same getWalletInfo function as the game and memes pages
+
+        // balance refresh
         const info = await getWalletInfo(publicKey.toString());
         setTokenBalance(info.gudtekBalance);
         setSolBalance(info.solBalance);
 
-        // Get generations
-        const { data: genData } = await supabase
-          .from('pfp_generations')
-          .select('id, preview_url, status, created_at')
-          .eq('wallet_address', publicKey.toString())
-          .order('created_at', { ascending: false });
+        // fetch generations via server API to bypass RLS
+        const res = await fetch('/api/pfp/list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: publicKey.toString() }),
+        });
 
+        if (!res.ok) throw new Error('Failed to fetch generations');
+        const { generations: genData } = await res.json();
         setGenerations(genData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -273,19 +278,21 @@ export default function PFPGenerator() {
     try {
       setWalletLoading(true);
       
-      // Use getWalletInfo directly for consistent balance checking
+      // balance refresh
       const info = await getWalletInfo(publicKey.toString());
       setTokenBalance(info.gudtekBalance);
       setSolBalance(info.solBalance);
 
-      // Get generations
-      const { data: genData } = await supabase
-        .from('pfp_generations')
-        .select('id, preview_url, status, created_at')
-        .eq('wallet_address', publicKey.toString())
-        .order('created_at', { ascending: false });
-
-      setGenerations(genData || []);
+      // generations via server route
+      const res = await fetch('/api/pfp/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: publicKey.toString() }),
+      });
+      if (res.ok) {
+        const { generations: genData } = await res.json();
+        setGenerations(genData || []);
+      }
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
@@ -377,8 +384,8 @@ export default function PFPGenerator() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">$GUDTEK Profile Picture Generator</h1>
-            <p className="text-lg text-gray-800">Create your custom GUD TEK profile picture</p>
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-2">GUDTEK PFP Forge</h1>
+            <p className="text-lg text-gray-800">Combine cutting-edge AI with your imagination to forge a one-of-a-kind GUDTEK mascot avatar.</p>
           </div>
 
           {/* Wallet Connection Section - Styled like the game page */}
@@ -492,7 +499,7 @@ export default function PFPGenerator() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-yellow-500" />
-                    Create New PFP
+                    Forge New Avatar
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -509,7 +516,7 @@ export default function PFPGenerator() {
                       <Textarea
                         value={prompt}
                         onChange={handlePromptChange}
-                            placeholder="Describe the PFP you want to generate..."
+                            placeholder="Tell the forge what your perfect GUDTEK mascot looks like…"
                         className="min-h-[100px] bg-[#ffd96633] border-2 border-[#ffd966] text-gray-900 rounded-xl text-lg font-medium px-4 py-3"
                       />
                           <p className="text-sm text-gray-700">
@@ -536,7 +543,7 @@ export default function PFPGenerator() {
                       ) : (
                             <div className="flex items-center justify-center gap-2">
                               <Sparkles className="w-5 h-5" />
-                              <span>Generate Preview</span>
+                              <span>Forge Preview</span>
                             </div>
                       )}
                     </Button>
@@ -595,18 +602,22 @@ export default function PFPGenerator() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-yellow-500" />
-                  Your PFP Gallery
+                  Your Avatar Gallery
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {connected ? (
                   generations.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
-                  {generations.map((gen) => (
+                  {generations.map((gen) => {
+                    const imgSrc = gen.status === 'downloaded' && gen.original_filename
+                      ? `${SUPABASE_STORAGE_URL}/${gen.original_filename}`
+                      : gen.preview_url;
+                    return (
                     <div key={gen.id} className="relative group">
                           <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-300 group-hover:border-orange-500 transition-all">
                         <Image
-                          src={gen.preview_url}
+                          src={imgSrc}
                           alt="Generated PFP"
                           fill
                           className="object-cover"
@@ -636,11 +647,12 @@ export default function PFPGenerator() {
                           </div>
                         )}
                       </div>
-                      ))}
-                    </div>
+                    );
+                  })}
+                </div>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-gray-700">No generations yet. Create your first PFP!</p>
+                      <p className="text-gray-700">Nothing here yet. Fire up the forge and craft your first avatar!</p>
                 </div>
                   )
                 ) : (
