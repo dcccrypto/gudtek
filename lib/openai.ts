@@ -72,7 +72,7 @@ export async function generateImage(prompt: string): Promise<string> {
       prompt: finalPrompt,
       n: 1,
       size: "1024x1024",
-      quality: "standard"
+      quality: "medium"
     });
 
     console.log('OpenAI image response received');
