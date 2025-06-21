@@ -2123,9 +2123,6 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
                   <div className="text-xl font-bold text-yellow-300 mb-1 drop-shadow">
                     Win Real $GUDTEK
                   </div>
-                  <div className="text-sm bg-black/30 rounded-lg py-2 px-3 text-white font-medium">
-                    Next airdrop: {contestInfo.nextAirdropDate}
-                  </div>
                 </div>
               </div>
             </CardContent>
