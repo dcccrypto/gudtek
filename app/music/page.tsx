@@ -198,22 +198,16 @@ export default function GudMusicPage() {
         audioContext.resume()
       }
       
-      audioContextRef.current = audioContext
-
-      const source = audioContext.createMediaElementSource(audioRef.current)
       const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 256
       
-      // Crypto chart optimized settings for smoother, more stable visualization
-      analyser.fftSize = 512  // Balanced resolution for crypto-style chart
-      analyser.smoothingTimeConstant = 0.8  // Much smoother, less jittery like real charts
-      analyser.minDecibels = -90
-      analyser.maxDecibels = -20
-
+      const source = audioContext.createMediaElementSource(audioRef.current)
       source.connect(analyser)
       analyser.connect(audioContext.destination)
-
-      sourceRef.current = source
+      
+      audioContextRef.current = audioContext
       analyserRef.current = analyser
+      sourceRef.current = source
     } catch (error) {
       console.error('Error setting up audio analyser:', error)
     }
@@ -222,30 +216,21 @@ export default function GudMusicPage() {
   const startVisualization = () => {
     if (!analyserRef.current || !canvasRef.current) return
 
-    const canvas = canvasRef.current
-    const canvasCtx = canvas.getContext('2d')
-    if (!canvasCtx) return
-
-    const bufferLength = analyserRef.current.frequencyBinCount
-    const dataArray = new Uint8Array(bufferLength)
-
     const draw = () => {
-      if (!analyserRef.current || !isPlaying) return
+      if (!analyserRef.current || !canvasRef.current) return
 
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const bufferLength = analyserRef.current.frequencyBinCount
+      const dataArray = new Uint8Array(bufferLength)
       analyserRef.current.getByteFrequencyData(dataArray)
 
-      // Clear canvas with professional dark background
-      canvasCtx.fillStyle = '#0c0c0f'
-      canvasCtx.fillRect(0, 0, canvas.width, canvas.height)
-
-      // Draw professional trading chart grid
-      drawProfessionalTradingGrid(canvasCtx, canvas)
-
-      // Draw enhanced crypto-style chart
-      drawEnhancedCryptoChart(canvasCtx, canvas, dataArray)
-
-      // Add professional chart labels and indicators
-      drawChartLabels(canvasCtx, canvas)
+      drawProfessionalTradingGrid(ctx, canvas)
+      drawEnhancedCryptoChart(ctx, canvas, dataArray)
+      drawVolumeIndicators(ctx, canvas, dataArray, 32)
+      drawChartLabels(ctx, canvas)
 
       animationRef.current = requestAnimationFrame(draw)
     }
@@ -256,195 +241,177 @@ export default function GudMusicPage() {
   const stopVisualization = () => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current)
+      animationRef.current = undefined
     }
   }
 
   const drawProfessionalTradingGrid = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    // Major grid lines
-    ctx.strokeStyle = '#1a1a23'
+    const { width, height } = canvas
+    
+    // Clear canvas with dark background
+    ctx.fillStyle = 'linear-gradient(135deg, #0c0c0f 0%, #1a1a23 100%)'
+    ctx.fillRect(0, 0, width, height)
+    
+    // Professional grid lines
+    ctx.strokeStyle = 'rgba(100, 100, 120, 0.2)'
     ctx.lineWidth = 1
-
-    // Horizontal grid lines (price levels)
-    for (let i = 0; i <= 8; i++) {
-      const y = (canvas.height / 8) * i
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(canvas.width, y)
-      ctx.stroke()
-    }
-
-    // Vertical grid lines (time intervals)
-    for (let i = 0; i <= 16; i++) {
-      const x = (canvas.width / 16) * i
+    
+    // Vertical grid lines
+    for (let i = 0; i <= 10; i++) {
+      const x = (width / 10) * i
       ctx.beginPath()
       ctx.moveTo(x, 0)
-      ctx.lineTo(x, canvas.height)
+      ctx.lineTo(x, height)
       ctx.stroke()
     }
-
-    // Minor grid lines for more detail
-    ctx.strokeStyle = '#13131a'
-    ctx.lineWidth = 0.5
-
-    // Minor horizontal lines
-    for (let i = 0; i <= 16; i++) {
-      const y = (canvas.height / 16) * i
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 8; i++) {
+      const y = (height / 8) * i
       ctx.beginPath()
       ctx.moveTo(0, y)
-      ctx.lineTo(canvas.width, y)
+      ctx.lineTo(width, y)
       ctx.stroke()
     }
+    
+    // Professional border
+    ctx.strokeStyle = 'rgba(100, 100, 120, 0.4)'
+    ctx.lineWidth = 2
+    ctx.strokeRect(0, 0, width, height)
   }
 
     const drawEnhancedCryptoChart = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, dataArray: Uint8Array) => {
-    // Crypto-style chart with fewer, wider candlesticks like real trading platforms
-    const numBars = Math.min(dataArray.length, 60) // Fewer bars for more crypto-like appearance
-    const barWidth = (canvas.width / numBars) * 0.8 // Slightly narrower bars with gaps
-    const barSpacing = canvas.width / numBars
-    let x = barSpacing * 0.1 // Start with small offset
-
-    // Process data for realistic candlestick visualization (reversed for proper crypto chart flow)
-    for (let i = 0; i < numBars; i += 1) {
-      // Reverse the data flow so newer/active data appears on the right like real crypto charts
-      const reverseIndex = numBars - 1 - i
-      const currentIndex = Math.floor((reverseIndex / numBars) * dataArray.length)
-      const nextIndex = Math.floor(((reverseIndex + 1) / numBars) * dataArray.length)
+    const { width, height } = canvas
+    const padding = 40
+    const chartWidth = width - padding * 2
+    const chartHeight = height - padding * 2
+    
+    // Professional candlestick-style visualization
+    const barWidth = chartWidth / dataArray.length
+    const maxValue = Math.max(...dataArray)
+    
+    // Enhanced gradient for volume bars
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
+    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.9)')  // Green top
+    gradient.addColorStop(0.3, 'rgba(59, 130, 246, 0.8)')  // Blue middle
+    gradient.addColorStop(0.7, 'rgba(245, 158, 11, 0.7)')  // Amber
+    gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)')   // Red bottom
+    
+    // Draw main frequency bars
+    ctx.fillStyle = gradient
+    
+    for (let i = 0; i < dataArray.length; i++) {
+      const barHeight = (dataArray[i] / 255) * chartHeight
+      const x = padding + i * barWidth
+      const y = height - padding - barHeight
       
-      const currentValue = dataArray[currentIndex] || 0
-      const nextValue = dataArray[nextIndex] || currentValue
+      // Professional bar with rounded top
+      ctx.fillRect(x, y, barWidth - 2, barHeight)
       
-      // Enhanced normalization to prevent flat areas and ensure more dynamic movement
-      const baseValue = 0.3 // Higher baseline to avoid flat areas
-      const amplification = 0.6 // Amplify the range
-      const normalizedCurrent = (currentValue / 255) * amplification + baseValue
-      const normalizedNext = (nextValue / 255) * amplification + baseValue
-      
-      // Add some baseline activity for low-frequency areas to prevent flatness
-      const activityBoost = Math.sin(i * 0.1) * 0.05 // Small sine wave for natural variation
-      const boostedCurrent = Math.min(normalizedCurrent + activityBoost, 0.95)
-      const boostedNext = Math.min(normalizedNext + activityBoost, 0.95)
-      
-      // Calculate realistic candlestick properties with enhanced volatility for visual interest
-      const open = boostedCurrent
-      const close = boostedNext
-      const volatility = Math.max(Math.abs(close - open) * 0.4, 0.02) // Minimum volatility to prevent flatness
-      const high = Math.max(open, close) + volatility
-      const low = Math.min(open, close) - volatility
-      
-      // Ensure values stay within realistic bounds
-      const clampedHigh = Math.min(high, 0.95)
-      const clampedLow = Math.max(low, 0.05)
-      
-      // Calculate positions with more realistic proportions
-      const chartHeight = canvas.height * 0.7 // Use 70% of canvas height
-      const chartBottom = canvas.height * 0.85 // Bottom margin
-      
-      const bodyHeight = Math.abs(close - open) * chartHeight
-      const bodyTop = chartBottom - (Math.max(open, close) * chartHeight)
-      const wickTop = chartBottom - (clampedHigh * chartHeight)
-      const wickBottom = chartBottom - (clampedLow * chartHeight)
-      
-      const isGreen = close >= open
-      
-      // Draw candlestick wick with professional styling
-      ctx.strokeStyle = isGreen ? '#26a69a' : '#ef5350' // More muted crypto colors
-      ctx.lineWidth = 1.5
-      ctx.beginPath()
-      ctx.moveTo(x + barWidth/2, wickTop)
-      ctx.lineTo(x + barWidth/2, wickBottom)
-      ctx.stroke()
-      
-      // Draw candlestick body with realistic crypto colors
-      if (isGreen) {
-        ctx.fillStyle = '#26a69a' // Binance-style green
-        ctx.strokeStyle = '#1e8e3e'
-      } else {
-        ctx.fillStyle = '#ef5350' // Binance-style red
-        ctx.strokeStyle = '#d32f2f'
+      // Add highlight on top of each bar
+      if (barHeight > 10) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+        ctx.fillRect(x, y, barWidth - 2, 3)
+        ctx.fillStyle = gradient
       }
-      
-      // Draw the candlestick body
-      const minBodyHeight = Math.max(bodyHeight, 3) // Slightly larger minimum height
-      ctx.fillRect(x + 2, bodyTop, barWidth - 4, minBodyHeight)
-      ctx.strokeRect(x + 2, bodyTop, barWidth - 4, minBodyHeight)
-      
-      // Add subtle glow for high volume (less aggressive)
-      if (normalizedCurrent > 0.6) {
-        ctx.shadowColor = isGreen ? '#26a69a' : '#ef5350'
-        ctx.shadowBlur = 3
-        ctx.fillRect(x + 2, bodyTop, barWidth - 4, minBodyHeight)
-        ctx.shadowBlur = 0
-      }
-      
-      x += barSpacing
     }
     
-    // Add volume bars at the bottom (like real crypto charts)
-    drawVolumeIndicators(ctx, canvas, dataArray, numBars)
+    // Draw moving average line
+    ctx.strokeStyle = 'rgba(34, 197, 94, 0.8)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    
+    const movingAverage = []
+    const windowSize = 5
+    
+    for (let i = 0; i < dataArray.length; i++) {
+      let sum = 0
+      let count = 0
+      for (let j = Math.max(0, i - windowSize); j <= Math.min(dataArray.length - 1, i + windowSize); j++) {
+        sum += dataArray[j]
+        count++
+      }
+      movingAverage.push(sum / count)
+    }
+    
+    for (let i = 0; i < movingAverage.length; i++) {
+      const x = padding + i * barWidth + barWidth / 2
+      const y = height - padding - (movingAverage[i] / 255) * chartHeight
+      
+      if (i === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
+    }
+    ctx.stroke()
+    
+    // Add glowing effect to the line
+    ctx.shadowColor = 'rgba(34, 197, 94, 0.5)'
+    ctx.shadowBlur = 5
+    ctx.stroke()
+    ctx.shadowBlur = 0
   }
 
   const drawVolumeIndicators = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, dataArray: Uint8Array, numBars: number) => {
-    const volumeHeight = canvas.height * 0.15 // Volume section height
-    const volumeBottom = canvas.height * 0.98
-    const barSpacing = canvas.width / numBars
-    let x = barSpacing * 0.1
-
-    for (let i = 0; i < numBars; i += 1) {
-      // Reverse the volume data flow to match the main chart
-      const reverseIndex = numBars - 1 - i
-      const currentIndex = Math.floor((reverseIndex / numBars) * dataArray.length)
-      const rawVolume = (dataArray[currentIndex] || 0) / 255
-      
-      // Enhanced volume calculation to prevent flat areas
-      const baseVolume = 0.2 // Minimum volume to show activity
-      const amplifiedVolume = rawVolume * 0.7 + baseVolume
-      const volume = Math.min(amplifiedVolume, 1.0)
-      
-      const barHeight = volume * volumeHeight * 0.8
-      
-      // Volume bars are typically more muted
-      ctx.fillStyle = `rgba(100, 149, 237, ${0.3 + volume * 0.4})` // Blue with varying opacity
-      ctx.fillRect(x + 2, volumeBottom - barHeight, (canvas.width / numBars) * 0.8 - 4, barHeight)
-      
-      x += barSpacing
-    }
+    const { width, height } = canvas
+    const padding = 20
+    const indicatorWidth = 80
+    const indicatorHeight = 20
+    
+    // Volume indicator background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    ctx.fillRect(width - indicatorWidth - padding, padding, indicatorWidth, indicatorHeight)
+    
+    // Calculate average volume
+    const avgVolume = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length
+    const volumePercent = avgVolume / 255
+    
+    // Volume bar
+    const volumeBarWidth = (indicatorWidth - 10) * volumePercent
+    const volumeColor = volumePercent > 0.7 ? 'rgba(239, 68, 68, 0.8)' : 
+                       volumePercent > 0.4 ? 'rgba(245, 158, 11, 0.8)' : 
+                       'rgba(34, 197, 94, 0.8)'
+    
+    ctx.fillStyle = volumeColor
+    ctx.fillRect(width - indicatorWidth - padding + 5, padding + 5, volumeBarWidth, indicatorHeight - 10)
+    
+    // Volume text
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+    ctx.font = '10px monospace'
+    ctx.fillText('VOL', width - indicatorWidth - padding + 5, padding - 5)
   }
 
   const drawChartLabels = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    // Chart title with crypto exchange styling
-    ctx.fillStyle = '#f0b90b' // Binance yellow
-    ctx.font = 'bold 16px "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace'
-    ctx.fillText('GUDTEK/USDT', 15, 25)
+    const { width, height } = canvas
     
-    // Status indicator
-    ctx.fillStyle = '#26a69a'
-    ctx.font = '12px "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace'
-    ctx.fillText('● LIVE', 15, 45)
+    // Professional labels
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+    ctx.font = '11px monospace'
     
-    // Timeframe indicator
-    ctx.fillStyle = '#8d8d8d'
-    ctx.font = '11px "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace'
-    ctx.fillText('1m', 70, 45)
-    
-    // Volume label
-    ctx.fillStyle = '#8d8d8d'
-    ctx.font = '9px "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace'
-    ctx.textAlign = 'left'
-    ctx.fillText('Volume', 15, canvas.height - 25)
-    
-    // Time labels at bottom
-    ctx.textAlign = 'center'
-    for (let i = 0; i <= 4; i++) {
-      const x = (canvas.width / 4) * i
-      const time = new Date(Date.now() - (4 - i) * 15000).toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-      ctx.fillText(time, x, canvas.height - 5)
+    // Y-axis labels (frequency ranges)
+    const frequencies = ['20Hz', '200Hz', '2kHz', '20kHz']
+    for (let i = 0; i < frequencies.length; i++) {
+      const y = height - 40 - (i * (height - 80) / (frequencies.length - 1))
+      ctx.fillText(frequencies[i], 5, y + 4)
     }
     
-    ctx.textAlign = 'left' // Reset alignment
+    // X-axis labels (time markers)
+    const timeMarkers = ['0s', '1s', '2s', '3s', '4s']
+    for (let i = 0; i < timeMarkers.length; i++) {
+      const x = 40 + (i * (width - 80) / (timeMarkers.length - 1))
+      ctx.fillText(timeMarkers[i], x - 10, height - 10)
+    }
+    
+    // Add title
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+    ctx.font = 'bold 12px monospace'
+    ctx.fillText('REAL-TIME FREQUENCY ANALYSIS', 40, 25)
+    
+    // Add current track info
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+    ctx.font = '10px monospace'
+    ctx.fillText(`NOW PLAYING: ${currentTrack.title.toUpperCase()}`, 40, height - 25)
   }
 
   const togglePlayPause = async () => {
@@ -464,41 +431,60 @@ export default function GudMusicPage() {
 
   const playTrack = async (track: Track) => {
     try {
-      // Stop previous audio context
+      // First, stop all audio processing
+      setIsPlaying(false)
+      
+      // Stop and clean up current audio context
       if (audioContextRef.current) {
-        audioContextRef.current.close()
+        try {
+          if (audioContextRef.current.state !== 'closed') {
+            await audioContextRef.current.close()
+          }
+        } catch (error) {
+          console.error('Error closing audio context:', error)
+        }
         audioContextRef.current = null
         analyserRef.current = null
         sourceRef.current = null
       }
 
-      // Stop current audio
+      // Stop current audio completely
       if (audioRef.current) {
         audioRef.current.pause()
         audioRef.current.currentTime = 0
+        // Force reload to clear any cached audio data
+        audioRef.current.load()
       }
 
-      setCurrentTrack(track)
+      // Reset state
       setCurrentTime(0)
       setDuration(0)
+      setCurrentTrack(track)
 
-      // Wait for the audio element to update its src
-      await new Promise(resolve => setTimeout(resolve, 200))
+      // Wait for the component to re-render with new track
+      await new Promise(resolve => setTimeout(resolve, 100))
 
       if (audioRef.current) {
+        // Set the new source explicitly
+        audioRef.current.src = `/Gudmusic/${track.filename}`
+        
         // Load the new track
         audioRef.current.load()
         
-        // Wait a bit for the load to start
-        await new Promise(resolve => setTimeout(resolve, 300))
+        // Wait for the load to complete
+        await new Promise((resolve) => {
+          const handleCanPlay = () => {
+            audioRef.current?.removeEventListener('canplay', handleCanPlay)
+            resolve(true)
+          }
+          audioRef.current?.addEventListener('canplay', handleCanPlay)
+          
+          // Timeout in case canplay doesn't fire
+          setTimeout(resolve, 1000)
+        })
         
-        // Try to play - the event listeners will handle duration detection
+        // Now try to play
         await audioRef.current.play()
-        
-        // Force duration update if available
-        if (!isNaN(audioRef.current.duration) && audioRef.current.duration > 0) {
-          setDuration(audioRef.current.duration)
-        }
       }
     } catch (error) {
       console.error('Error playing track:', error)
@@ -582,14 +568,14 @@ export default function GudMusicPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
       </div>
 
-      <div className="relative z-10 pt-24 px-4 pb-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Enhanced Header */}
+      <div className="relative z-10 pt-16 sm:pt-24 px-3 sm:px-4 pb-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Enhanced Header - Mobile Optimized */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
             <motion.div
               animate={{ 
@@ -601,43 +587,44 @@ export default function GudMusicPage() {
                 repeat: isPlaying ? Infinity : 0, 
                 ease: "easeInOut" 
               }}
-              className="mx-auto w-20 h-20 mb-6 rounded-full bg-white/20 backdrop-blur-lg flex items-center justify-center"
+              className="mx-auto w-16 h-16 sm:w-20 sm:h-20 mb-4 sm:mb-6 rounded-full bg-white/20 backdrop-blur-lg flex items-center justify-center"
             >
-              <Headphones className="w-10 h-10 text-gray-900" />
+              <Headphones className="w-8 h-8 sm:w-10 sm:h-10 text-gray-900" />
             </motion.div>
-            <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-4 tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 mb-3 sm:mb-4 tracking-tight px-2">
               GUD MUSIC
             </h1>
-            <p className="text-xl text-gray-800 max-w-2xl mx-auto mb-4">
+            <p className="text-lg sm:text-xl text-gray-800 max-w-2xl mx-auto mb-3 sm:mb-4 px-4">
               Immerse yourself in the sounds of the GUD TEK universe
             </p>
-            <Badge className="bg-white/20 text-gray-900 border-white/30 px-4 py-2">
+            <Badge className="bg-white/20 text-gray-900 border-white/30 px-3 sm:px-4 py-1 sm:py-2 text-sm">
               {tracks.length} Exclusive Tracks
             </Badge>
           </motion.div>
 
-          {/* Enhanced Professional Audio Visualizer */}
+          {/* Enhanced Professional Audio Visualizer - Mobile Responsive */}
           <AnimatePresence>
             {showVisualizer && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="mb-8"
+                className="mb-6 sm:mb-8"
               >
                 <Card className="bg-white/10 backdrop-blur-lg border-white/20 overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <BarChart3 className="w-5 h-5 mr-2" />
-                        Audio Frequency Analyzer
+                  <CardContent className="p-3 sm:p-6">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
+                        <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                        <span className="hidden sm:inline">Audio Frequency Analyzer</span>
+                        <span className="sm:hidden">Analyzer</span>
                       </h3>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setShowVisualizer(false)}
-                          className="text-gray-700 hover:text-gray-900"
+                          className="text-gray-700 hover:text-gray-900 text-xs sm:text-sm"
                         >
                           Hide
                         </Button>
@@ -653,17 +640,17 @@ export default function GudMusicPage() {
                           ref={canvasRef} 
                           width={1000} 
                           height={250} 
-                          className="w-full h-60 rounded-lg border border-gray-700"
+                          className="w-full h-32 sm:h-48 md:h-60 rounded-lg border border-gray-700"
                           style={{ 
                             background: 'linear-gradient(135deg, #0c0c0f 0%, #1a1a23 100%)',
                             imageRendering: 'pixelated' 
                           }}
                         />
-                        <div className="absolute top-3 right-3 flex items-center gap-2">
-                          <div className="bg-green-500/20 text-green-400 text-xs font-mono px-2 py-1 rounded border border-green-500/30">
+                        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex items-center gap-1 sm:gap-2">
+                          <div className="bg-green-500/20 text-green-400 text-xs font-mono px-1 sm:px-2 py-1 rounded border border-green-500/30">
                             LIVE
                           </div>
-                          <div className="bg-blue-500/20 text-blue-400 text-xs font-mono px-2 py-1 rounded border border-blue-500/30">
+                          <div className="bg-blue-500/20 text-blue-400 text-xs font-mono px-1 sm:px-2 py-1 rounded border border-blue-500/30">
                             60 FPS
                           </div>
                         </div>
@@ -675,26 +662,28 @@ export default function GudMusicPage() {
             )}
           </AnimatePresence>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Enhanced Now Playing - Large Player */}
+          {/* Mobile-First Responsive Layout */}
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Enhanced Now Playing - Mobile Optimized */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="lg:col-span-2"
+              className="lg:col-span-2 order-1"
             >
               <Card className="bg-white/20 backdrop-blur-lg border-white/30 overflow-hidden">
-                <CardContent className="p-8">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {/* Static Album Art (No Rotation) */}
-                    <div className="relative w-full md:w-80 h-80 mx-auto md:mx-0 flex-shrink-0">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
+                  <div className="flex flex-col gap-4 sm:gap-6">
+                    {/* Mobile-First Album Art */}
+                    <div className="relative w-full max-w-sm mx-auto sm:max-w-md lg:max-w-none lg:w-80 lg:mx-0 aspect-square lg:flex-shrink-0">
                       <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
                         <Image
                           src={currentTrack.cover}
                           alt={`${currentTrack.title} cover`}
                           fill
                           className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 320px"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+                          priority
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                         
@@ -703,7 +692,7 @@ export default function GudMusicPage() {
                           <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="absolute top-4 right-4"
+                            className="absolute top-3 sm:top-4 right-3 sm:right-4"
                           >
                             <motion.div
                               animate={{ 
@@ -717,71 +706,75 @@ export default function GudMusicPage() {
                               }}
                               className="bg-white/20 backdrop-blur-lg rounded-full p-2"
                             >
-                              <Music className="w-6 h-6 text-white" />
+                              <Music className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                             </motion.div>
                           </motion.div>
                         )}
                       </div>
                       
-                      {/* Enhanced floating play button */}
+                      {/* Enhanced floating play button - Mobile Optimized */}
                       <motion.div
-                        className="absolute bottom-4 right-4"
+                        className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
                         <Button
                           onClick={togglePlayPause}
                           size="lg"
-                          className="rounded-full w-16 h-16 bg-white/90 hover:bg-white text-gray-900 shadow-xl"
+                          className="rounded-full w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-white/90 hover:bg-white text-gray-900 shadow-xl"
                         >
-                          {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
+                          {isPlaying ? (
+                            <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                          ) : (
+                            <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
+                          )}
                         </Button>
                       </motion.div>
                     </div>
 
-                    {/* Enhanced Track Info & Controls */}
-                    <div className="flex-1 flex flex-col justify-between">
+                    {/* Enhanced Track Info & Controls - Mobile Optimized */}
+                    <div className="flex-1 flex flex-col justify-between text-center lg:text-left">
                       <div>
-                        <Badge className="mb-4 bg-orange-500/20 text-orange-900 border-orange-400">
+                        <Badge className="mb-3 sm:mb-4 bg-orange-500/20 text-orange-900 border-orange-400">
                           Now Playing
                         </Badge>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                           {currentTrack.title}
                         </h2>
-                        <p className="text-gray-700 text-lg mb-2">
+                        <p className="text-gray-700 text-base sm:text-lg mb-2">
                           GUD TEK Official
                         </p>
-                        <p className="text-gray-600 text-sm mb-6 italic">
+                        <p className="text-gray-600 text-sm mb-4 sm:mb-6 italic px-2 lg:px-0">
                           {currentTrack.description}
                         </p>
 
-                        {/* Enhanced Action Buttons */}
-                        <div className="flex gap-3 mb-8 flex-wrap">
+                        {/* Enhanced Action Buttons - Mobile Responsive */}
+                        <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-8 justify-center lg:justify-start flex-wrap">
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => downloadTrack(currentTrack)}
-                            className="bg-white/20 border-white/30 hover:bg-white/30"
+                            className="bg-white/20 border-white/30 hover:bg-white/30 text-xs sm:text-sm"
                           >
-                            <Download className="w-4 h-4 mr-2" />
-                            Download
+                            <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Download</span>
+                            <span className="sm:hidden">DL</span>
                           </Button>
                           
-                          {/* Simple X/Twitter Share Button */}
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => shareToX(currentTrack)}
-                            className="bg-white/20 border-white/30 hover:bg-white/30"
+                            className="bg-white/20 border-white/30 hover:bg-white/30 text-xs sm:text-sm"
                           >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            Share on X
+                            <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            Share
                           </Button>
                         </div>
                       </div>
 
-                      {/* Enhanced Progress Bar */}
-                      <div className="space-y-4">
+                      {/* Enhanced Progress Bar - Mobile Optimized */}
+                      <div className="space-y-3 sm:space-y-4">
                         <Slider
                           value={[duration ? (currentTime / duration) * 100 : 0]}
                           onValueChange={seekTo}
@@ -789,70 +782,78 @@ export default function GudMusicPage() {
                           step={1}
                           className="w-full"
                         />
-                        <div className="flex justify-between text-sm text-gray-700">
+                        <div className="flex justify-between text-xs sm:text-sm text-gray-700">
                           <span>{formatTime(currentTime)}</span>
                           <span>{formatTime(duration)}</span>
                         </div>
 
-                        {/* Enhanced Controls */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                        {/* Enhanced Controls - Mobile First */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1 sm:gap-2">
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={() => setIsShuffled(!isShuffled)}
-                              className={`text-gray-800 hover:text-gray-900 ${isShuffled ? 'bg-white/20' : ''}`}
+                              className={`text-gray-800 hover:text-gray-900 p-2 ${isShuffled ? 'bg-white/20' : ''}`}
                             >
-                              <Shuffle className="w-4 h-4" />
+                              <Shuffle className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={previousTrack}
-                              className="text-gray-800 hover:text-gray-900"
+                              className="text-gray-800 hover:text-gray-900 p-2"
                             >
-                              <SkipBack className="w-5 h-5" />
+                              <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
                             </Button>
                             <Button 
                               onClick={togglePlayPause}
-                              className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-12 h-12"
+                              className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12"
                             >
-                              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                              {isPlaying ? (
+                                <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
+                              ) : (
+                                <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />
+                              )}
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={nextTrack}
-                              className="text-gray-800 hover:text-gray-900"
+                              className="text-gray-800 hover:text-gray-900 p-2"
                             >
-                              <SkipForward className="w-5 h-5" />
+                              <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={() => setIsRepeat(!isRepeat)}
-                              className={`text-gray-800 hover:text-gray-900 ${isRepeat ? 'bg-white/20' : ''}`}
+                              className={`text-gray-800 hover:text-gray-900 p-2 ${isRepeat ? 'bg-white/20' : ''}`}
                             >
-                              <Repeat className="w-4 h-4" />
+                              <Repeat className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
 
-                          {/* Enhanced Volume Control */}
-                          <div className="flex items-center gap-2">
+                          {/* Enhanced Volume Control - Mobile Responsive */}
+                          <div className="flex items-center gap-1 sm:gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={toggleMute}
-                              className="text-gray-800 hover:text-gray-900"
+                              className="text-gray-800 hover:text-gray-900 p-2"
                             >
-                              {isMuted || volume[0] === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                              {isMuted || volume[0] === 0 ? (
+                                <VolumeX className="w-3 h-3 sm:w-4 sm:h-4" />
+                              ) : (
+                                <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                              )}
                             </Button>
                             <Slider
                               value={volume}
                               onValueChange={setVolume}
                               max={100}
                               step={1}
-                              className="w-20"
+                              className="w-16 sm:w-20"
                             />
                           </div>
                         </div>
@@ -863,17 +864,17 @@ export default function GudMusicPage() {
               </Card>
             </motion.div>
 
-            {/* Enhanced Track List */}
+            {/* Enhanced Track List - Mobile Optimized */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4 order-2"
             >
-              <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <Music className="w-6 h-6 mr-2" />
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center justify-center lg:justify-start">
+                <Music className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
                 Playlist
-                <Badge className="ml-3 bg-white/20 text-gray-900 border-white/30">
+                <Badge className="ml-2 sm:ml-3 bg-white/20 text-gray-900 border-white/30 text-xs sm:text-sm">
                   {tracks.length}
                 </Badge>
               </h3>
@@ -885,6 +886,7 @@ export default function GudMusicPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Card 
                     className={`cursor-pointer transition-all duration-200 ${
@@ -894,9 +896,9 @@ export default function GudMusicPage() {
                     }`}
                     onClick={() => playTrack(track)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0">
                           <Image
                             src={track.cover}
                             alt={`${track.title} cover`}
@@ -910,24 +912,24 @@ export default function GudMusicPage() {
                                 animate={{ scale: [1, 1.2, 1] }}
                                 transition={{ repeat: Infinity, duration: 1 }}
                               >
-                                <Pause className="w-4 h-4 text-white" />
+                                <Pause className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                               </motion.div>
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-gray-900 truncate">
+                          <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base">
                             {track.title}
                           </h4>
-                          <p className="text-sm text-gray-700 mb-1">
+                          <p className="text-xs sm:text-sm text-gray-700 mb-1">
                             GUD TEK Official
                           </p>
                           <p className="text-xs text-gray-600 truncate">
                             {track.description}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs sm:text-sm text-gray-600">
                             {track.duration}
                           </span>
                         </div>
