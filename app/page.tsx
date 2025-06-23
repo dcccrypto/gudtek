@@ -592,7 +592,7 @@ export default function GudTekLanding() {
             {/* Social Media Links */}
             <div className="flex items-center justify-center space-x-6 mb-6">
               <a
-                href="https://x.com/gudteksolana"
+                href="https://x.com/gudtek_solana"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 rounded-full bg-white/20 hover:bg-white/40 border-2 border-orange-400 shadow-lg transition-all duration-200 hover:scale-110"
@@ -643,7 +643,7 @@ export default function GudTekLanding() {
           {/* X Button */}
           <motion.button
             aria-label="Gud Tek on X"
-            onClick={() => window.open("https://x.com/gudteksolana", "_blank")}
+            onClick={() => window.open("https://x.com/gudtek_solana", "_blank")}
             className="p-3 rounded-full bg-white/20 hover:bg-white/40 border-2 border-gray-900 shadow-lg transition-transform transform hover:scale-110 backdrop-blur"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
