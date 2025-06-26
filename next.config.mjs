@@ -17,8 +17,23 @@ const nextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
+        assert: false,
+        http: false,
+        https: false,
+        url: false,
+        zlib: false,
+        // Specifically exclude Node.js modules that stockfish.wasm might try to use
+        perf_hooks: false,
+        worker_threads: false,
+        child_process: false,
       }
     }
+    
+    // No special WASM configuration needed for API-based Stockfish
     
     return config
   },
@@ -68,6 +83,29 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+          // Required for WebAssembly threading (Stockfish.wasm)
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+      // Specific headers for Stockfish WASM files
+      {
+        source: '/stockfish/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },

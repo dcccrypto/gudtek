@@ -1,0 +1,21 @@
+{
+  "name": "gudtek-chess-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for GudTek Chess multiplayer functionality",
+  "main": "chess-server.js",
+  "scripts": {
+    "start": "node chess-server.js",
+    "dev": "nodemon chess-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["chess", "websocket", "solana", "blockchain", "gaming"],
+  "author": "GudTek Team",
+  "license": "MIT"
+} 

@@ -1039,4 +1039,213 @@ export const getFeedbackStats = async () => {
     console.error('Error fetching feedback stats:', error)
     return { total: 0, unread: 0, recent: 0 }
   }
-} 
+}
+
+// ============ CHESS DATABASE FUNCTIONS ============
+
+export interface ChessGame {
+  id: string
+  player_white: string
+  player_black: string
+  game_mode: 'ai' | 'multiplayer'
+  status: 'in_progress' | 'completed' | 'abandoned'
+  winner: 'white' | 'black' | 'draw' | null
+  pgn: string
+  final_position: string
+  time_control: number
+  white_time_left: number
+  black_time_left: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ChessMove {
+  id: string
+  game_id: string
+  move_number: number
+  player: 'white' | 'black'
+  move_san: string
+  move_uci: string
+  position_fen: string
+  time_taken: number
+  created_at: string
+}
+
+export interface ChessStats {
+  id: string
+  wallet_address: string
+  elo_rating: number
+  total_games: number
+  wins: number
+  losses: number
+  draws: number
+  games_as_white: number
+  games_as_black: number
+  ai_games_played: number
+  ai_games_won: number
+  average_game_duration: number
+  favorite_opening: string
+  longest_winning_streak: number
+  current_winning_streak: number
+  total_moves_played: number
+  checkmates_delivered: number
+  created_at: string
+  updated_at: string
+}
+
+export const createChessGame = async (gameData: {
+  playerWhite: string
+  playerBlack: string
+  gameMode: 'ai' | 'multiplayer'
+  timeControl: number
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_games')
+      .insert({
+        player_white: gameData.playerWhite,
+        player_black: gameData.playerBlack,
+        game_mode: gameData.gameMode,
+        status: 'in_progress',
+        time_control: gameData.timeControl,
+        white_time_left: gameData.timeControl,
+        black_time_left: gameData.timeControl,
+        pgn: '',
+        final_position: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error creating chess game:', error)
+    throw error
+  }
+}
+
+export const updateChessGame = async (gameId: string, updates: {
+  status?: 'in_progress' | 'completed' | 'abandoned'
+  winner?: 'white' | 'black' | 'draw' | null
+  pgn?: string
+  finalFen?: string
+  whiteTimeLeft?: number
+  blackTimeLeft?: number
+}) => {
+  try {
+    const updateData: any = { updated_at: new Date().toISOString() }
+    
+    if (updates.status) updateData.status = updates.status
+    if (updates.winner !== undefined) updateData.winner = updates.winner
+    if (updates.pgn) updateData.pgn = updates.pgn
+    if (updates.finalFen) updateData.final_position = updates.finalFen
+    if (updates.whiteTimeLeft !== undefined) updateData.white_time_left = updates.whiteTimeLeft
+    if (updates.blackTimeLeft !== undefined) updateData.black_time_left = updates.blackTimeLeft
+
+    const { error } = await supabase
+      .from('chess_games')
+      .update(updateData)
+      .eq('id', gameId)
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error updating chess game:', error)
+    throw error
+  }
+}
+
+export const recordChessMove = async (moveData: {
+  gameId: string
+  moveNumber: number
+  player: 'white' | 'black'
+  moveSan: string
+  moveUci: string
+  positionFen: string
+  timeTaken: number
+}) => {
+  try {
+    const { error } = await supabase
+      .from('chess_moves')
+      .insert({
+        game_id: moveData.gameId,
+        move_number: moveData.moveNumber,
+        player: moveData.player,
+        move_san: moveData.moveSan,
+        move_uci: moveData.moveUci,
+        position_fen: moveData.positionFen,
+        time_taken: moveData.timeTaken
+      })
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error recording chess move:', error)
+    throw error
+  }
+}
+
+export const getChessStats = async (walletAddress: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_stats')
+      .select('*')
+      .eq('wallet_address', walletAddress)
+      .single()
+
+    if (error && error.code !== 'PGRST116') throw error
+    return data
+  } catch (error) {
+    console.error('Error fetching chess stats:', error)
+    return null
+  }
+}
+
+export const updateChessStats = async (walletAddress: string, result: 'win' | 'loss' | 'draw', timePlayed: number) => {
+  try {
+    const { error } = await supabase.rpc('update_chess_stats', {
+      p_wallet_address: walletAddress,
+      p_result: result,
+      p_time_played: timePlayed
+    })
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error updating chess stats:', error)
+    throw error
+  }
+}
+
+export const getChessLeaderboard = async (limit: number = 20) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_stats')
+      .select('wallet_address, elo_rating, total_games, wins, losses, draws')
+      .order('elo_rating', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching chess leaderboard:', error)
+    return []
+  }
+}
+
+export const getUserChessGames = async (walletAddress: string, limit: number = 10) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_games')
+      .select('*')
+      .or(`player_white.eq.${walletAddress},player_black.eq.${walletAddress}`)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching user chess games:', error)
+    return []
+  }
+}
