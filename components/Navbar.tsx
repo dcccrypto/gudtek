@@ -19,6 +19,7 @@ export default function Navbar() {
   const navItems: NavItem[] = [
     { name: "Home", href: "/" },
     { name: "Game", href: "/game" },
+    { name: "Chess", href: "/chess" },
     { name: "Announcements", href: "/announcements" },
     { name: "Memes", href: "/memes" },
     { name: "GudMusic", href: "/music" },

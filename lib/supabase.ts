@@ -1039,4 +1039,485 @@ export const getFeedbackStats = async () => {
     console.error('Error fetching feedback stats:', error)
     return { total: 0, unread: 0, recent: 0 }
   }
-} 
+}
+
+// ============ CHESS DATABASE FUNCTIONS ============
+
+export interface ChessGame {
+  id: string
+  player_white: string
+  player_black: string
+  game_mode: 'ai' | 'multiplayer'
+  status: 'in_progress' | 'completed' | 'abandoned'
+  winner: 'white' | 'black' | 'draw' | null
+  pgn: string
+  final_position: string
+  time_control: number
+  white_time_left: number
+  black_time_left: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ChessMove {
+  id: string
+  game_id: string
+  move_number: number
+  player: 'white' | 'black'
+  move_san: string
+  move_uci: string
+  position_fen: string
+  time_taken: number
+  created_at: string
+}
+
+export interface ChessStats {
+  id: string
+  wallet_address: string
+  elo_rating: number
+  total_games: number
+  wins: number
+  losses: number
+  draws: number
+  games_as_white: number
+  games_as_black: number
+  ai_games_played: number
+  ai_games_won: number
+  average_game_duration: number
+  favorite_opening: string
+  longest_winning_streak: number
+  current_winning_streak: number
+  total_moves_played: number
+  checkmates_delivered: number
+  created_at: string
+  updated_at: string
+}
+
+export const createChessGame = async (gameData: {
+  playerWhite: string
+  playerBlack: string
+  gameMode: 'ai' | 'multiplayer'
+  timeControl: number
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_games')
+      .insert({
+        player_white: gameData.playerWhite,
+        player_black: gameData.playerBlack,
+        game_mode: gameData.gameMode,
+        status: 'in_progress',
+        time_control: gameData.timeControl,
+        white_time_left: gameData.timeControl,
+        black_time_left: gameData.timeControl,
+        pgn: '',
+        final_position: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error creating chess game:', error)
+    throw error
+  }
+}
+
+export const updateChessGame = async (gameId: string, updates: {
+  status?: 'in_progress' | 'completed' | 'abandoned'
+  winner?: 'white' | 'black' | 'draw' | null
+  pgn?: string
+  finalFen?: string
+  whiteTimeLeft?: number
+  blackTimeLeft?: number
+}) => {
+  try {
+    const updateData: any = { updated_at: new Date().toISOString() }
+    
+    if (updates.status) updateData.status = updates.status
+    if (updates.winner !== undefined) updateData.winner = updates.winner
+    if (updates.pgn) updateData.pgn = updates.pgn
+    if (updates.finalFen) updateData.final_position = updates.finalFen
+    if (updates.whiteTimeLeft !== undefined) updateData.white_time_left = updates.whiteTimeLeft
+    if (updates.blackTimeLeft !== undefined) updateData.black_time_left = updates.blackTimeLeft
+
+    const { error } = await supabase
+      .from('chess_games')
+      .update(updateData)
+      .eq('id', gameId)
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error updating chess game:', error)
+    throw error
+  }
+}
+
+export const recordChessMove = async (moveData: {
+  gameId: string
+  moveNumber: number
+  player: 'white' | 'black'
+  moveSan: string
+  moveUci: string
+  positionFen: string
+  timeTaken: number
+}) => {
+  try {
+    const { error } = await supabase
+      .from('chess_moves')
+      .insert({
+        game_id: moveData.gameId,
+        move_number: moveData.moveNumber,
+        player: moveData.player,
+        move_san: moveData.moveSan,
+        move_uci: moveData.moveUci,
+        position_fen: moveData.positionFen,
+        time_taken: moveData.timeTaken
+      })
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error recording chess move:', error)
+    throw error
+  }
+}
+
+export const getChessStats = async (walletAddress: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_stats')
+      .select('*')
+      .eq('wallet_address', walletAddress)
+      .single()
+
+    if (error && error.code !== 'PGRST116') throw error
+    return data
+  } catch (error) {
+    console.error('Error fetching chess stats:', error)
+    return null
+  }
+}
+
+export const updateChessStats = async (walletAddress: string, result: 'win' | 'loss' | 'draw', timePlayed: number) => {
+  try {
+    const { error } = await supabase.rpc('update_chess_stats', {
+      p_wallet_address: walletAddress,
+      p_result: result,
+      p_time_played: timePlayed
+    })
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error updating chess stats:', error)
+    throw error
+  }
+}
+
+export const getChessLeaderboard = async (limit: number = 20) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_stats')
+      .select('wallet_address, elo_rating, total_games, wins, losses, draws')
+      .order('elo_rating', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching chess leaderboard:', error)
+    return []
+  }
+}
+
+export const getUserChessGames = async (walletAddress: string, limit: number = 10) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_games')
+      .select('*')
+      .or(`player_white.eq.${walletAddress},player_black.eq.${walletAddress}`)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching user chess games:', error)
+    return []
+  }
+}
+
+export interface ChessLobby {
+  id: string
+  lobby_code: string
+  host_wallet: string
+  lobby_type: 'open' | 'private'
+  allowed_wallets: string[]
+  max_players: number
+  current_players: number
+  time_control: number
+  increment: number
+  status: 'waiting' | 'full' | 'started' | 'completed'
+  game_id?: string
+  created_at: string
+  expires_at: string
+}
+
+export interface ChessLobbyParticipant {
+  id: string
+  lobby_id: string
+  wallet_address: string
+  joined_at: string
+}
+
+// Chess Lobby Functions
+export const createChessLobby = async (lobbyData: {
+  hostWallet: string
+  lobbyType: 'open' | 'private'
+  allowedWallets?: string[]
+  timeControl?: number
+  increment?: number
+}) => {
+  try {
+    // Generate a unique lobby code
+    let lobbyCode: string
+    let codeExists = true
+    
+    while (codeExists) {
+      // Generate 6-character code
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+      lobbyCode = ''
+      for (let i = 0; i < 6; i++) {
+        lobbyCode += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      
+      // Check if code already exists
+      const { data: existing } = await supabase
+        .from('chess_lobbies')
+        .select('id')
+        .eq('lobby_code', lobbyCode)
+        .single()
+      
+      codeExists = !!existing
+    }
+
+    const { data, error } = await supabase
+      .from('chess_lobbies')
+      .insert({
+        lobby_code: lobbyCode,
+        host_wallet: lobbyData.hostWallet,
+        lobby_type: lobbyData.lobbyType,
+        allowed_wallets: lobbyData.allowedWallets || [],
+        time_control: lobbyData.timeControl || 600,
+        increment: lobbyData.increment || 0,
+        status: 'waiting'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Add the host as a participant
+    await supabase
+      .from('chess_lobby_participants')
+      .insert({
+        lobby_id: data.id,
+        wallet_address: lobbyData.hostWallet
+      })
+
+    return data
+  } catch (error) {
+    console.error('Error creating chess lobby:', error)
+    throw error
+  }
+}
+
+export const joinChessLobby = async (lobbyCode: string, walletAddress: string) => {
+  try {
+    // First, get the lobby
+    const { data: lobby, error: lobbyError } = await supabase
+      .from('chess_lobbies')
+      .select('*')
+      .eq('lobby_code', lobbyCode)
+      .eq('status', 'waiting')
+      .single()
+
+    if (lobbyError || !lobby) {
+      throw new Error('Lobby not found or no longer available')
+    }
+
+    // Check if lobby is full
+    if (lobby.current_players >= lobby.max_players) {
+      throw new Error('Lobby is full')
+    }
+
+    // Check if it's a private lobby and user is allowed
+    if (lobby.lobby_type === 'private' && 
+        lobby.allowed_wallets && 
+        !lobby.allowed_wallets.includes(walletAddress)) {
+      throw new Error('You are not allowed to join this private lobby')
+    }
+
+    // Check if user is already in the lobby
+    const { data: existingParticipant } = await supabase
+      .from('chess_lobby_participants')
+      .select('id')
+      .eq('lobby_id', lobby.id)
+      .eq('wallet_address', walletAddress)
+      .single()
+
+    if (existingParticipant) {
+      return lobby // Already in lobby
+    }
+
+    // Add participant
+    const { error: participantError } = await supabase
+      .from('chess_lobby_participants')
+      .insert({
+        lobby_id: lobby.id,
+        wallet_address: walletAddress
+      })
+
+    if (participantError) throw participantError
+
+    // Get updated lobby
+    const { data: updatedLobby, error: updateError } = await supabase
+      .from('chess_lobbies')
+      .select('*')
+      .eq('id', lobby.id)
+      .single()
+
+    if (updateError) throw updateError
+
+    return updatedLobby
+  } catch (error) {
+    console.error('Error joining chess lobby:', error)
+    throw error
+  }
+}
+
+export const leaveLobby = async (lobbyId: string, walletAddress: string) => {
+  try {
+    const { error } = await supabase
+      .from('chess_lobby_participants')
+      .delete()
+      .eq('lobby_id', lobbyId)
+      .eq('wallet_address', walletAddress)
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error leaving lobby:', error)
+    throw error
+  }
+}
+
+export const getLobby = async (lobbyCode: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_lobbies')
+      .select(`
+        *,
+        chess_lobby_participants(wallet_address, joined_at)
+      `)
+      .eq('lobby_code', lobbyCode)
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error fetching lobby:', error)
+    return null
+  }
+}
+
+export const getOpenLobbies = async (limit: number = 10) => {
+  try {
+    const { data, error } = await supabase
+      .from('chess_lobbies')
+      .select(`
+        *,
+        chess_lobby_participants(wallet_address)
+      `)
+      .eq('lobby_type', 'open')
+      .eq('status', 'waiting')
+      .gt('expires_at', new Date().toISOString())
+      .lt('current_players', 2)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching open lobbies:', error)
+    return []
+  }
+}
+
+export const startGameFromLobby = async (lobbyId: string) => {
+  try {
+    // Get lobby participants
+    const { data: participants, error: participantsError } = await supabase
+      .from('chess_lobby_participants')
+      .select('wallet_address')
+      .eq('lobby_id', lobbyId)
+      .order('joined_at', { ascending: true })
+
+    if (participantsError || !participants || participants.length < 2) {
+      throw new Error('Not enough players to start game')
+    }
+
+    // Get lobby details for time control
+    const { data: lobby, error: lobbyError } = await supabase
+      .from('chess_lobbies')
+      .select('time_control')
+      .eq('id', lobbyId)
+      .single()
+
+    if (lobbyError || !lobby) {
+      throw new Error('Lobby not found')
+    }
+
+    // Create the game
+    const gameData = await createChessGame({
+      playerWhite: participants[0].wallet_address,
+      playerBlack: participants[1].wallet_address,
+      gameMode: 'multiplayer',
+      timeControl: lobby.time_control
+    })
+
+    // Update lobby status
+    const { error: updateError } = await supabase
+      .from('chess_lobbies')
+      .update({
+        status: 'started',
+        game_id: gameData.id
+      })
+      .eq('id', lobbyId)
+
+    if (updateError) throw updateError
+
+    return gameData
+  } catch (error) {
+    console.error('Error starting game from lobby:', error)
+    throw error
+  }
+}
+
+export const updateLobbyStatus = async (lobbyId: string, status: 'waiting' | 'full' | 'started' | 'completed') => {
+  try {
+    const { error } = await supabase
+      .from('chess_lobbies')
+      .update({ status })
+      .eq('id', lobbyId)
+
+    if (error) throw error
+    return true
+  } catch (error) {
+    console.error('Error updating lobby status:', error)
+    throw error
+  }
+}
