@@ -211,16 +211,23 @@ export default function ChessPage() {
   // Initialize socket connection
   useEffect(() => {
     if (connected && publicKey) {
-      socketRef.current = io('ws://localhost:3001', {
+      const serverUrl = process.env.NEXT_PUBLIC_CHESS_SERVER_URL || 'ws://localhost:3001'
+      socketRef.current = io(serverUrl, {
         transports: ['websocket'],
         timeout: 10000,
+        query: {
+          wallet: publicKey.toString()
+        }
       })
       
       const socket = socketRef.current
       
       socket.on('connect', () => {
         console.log('Connected to chess server')
-        socket.emit('authenticate', { wallet: publicKey.toString() })
+      })
+      
+      socket.on('authenticated', (data) => {
+        console.log('Wallet authenticated:', data.wallet.slice(0, 8) + '...')
       })
       
       socket.on('challenge_received', handleChallengeReceived)
@@ -337,12 +344,12 @@ export default function ChessPage() {
   }
 
   const handleSocketError = (error: string) => {
-    toast({
-      title: "Error",
+      toast({
+        title: "Error",
       description: error,
-      variant: "destructive",
-    })
-  }
+        variant: "destructive",
+      })
+    }
 
   // Legacy function - direct challenges have been replaced with lobby system
   const sendChallenge = async () => {
@@ -1511,13 +1518,13 @@ export default function ChessPage() {
                                 </Badge>
                               </div>
                             )}
-                            <Button 
+                              <Button 
                               onClick={resetGame} 
-                              variant="outline" 
+                                variant="outline" 
                               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold border-0 shadow-md hover:shadow-lg transition-all duration-200"
-                            >
+                              >
                               New Game
-                            </Button>
+                              </Button>
                           </CardContent>
                         </Card>
 
@@ -1676,11 +1683,11 @@ export default function ChessPage() {
                                 <Users className="w-6 h-6 text-orange-600" />
                               </div>
                               Active Lobby: {currentLobby.lobby_code}
-                            </CardTitle>
+                          </CardTitle>
                             <CardDescription className="text-gray-700 dark:text-gray-300">
                               Share the lobby code or invite link with friends
-                            </CardDescription>
-                          </CardHeader>
+                          </CardDescription>
+                        </CardHeader>
                           <CardContent className="space-y-6">
                             <div className="grid grid-cols-2 gap-6">
                               <div className="bg-orange-50/50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200/50">
@@ -1704,7 +1711,7 @@ export default function ChessPage() {
                                   Invite Link
                                 </Label>
                                 <div className="flex gap-2">
-                                  <Input
+                            <Input
                                     value={inviteLink}
                                     readOnly
                                     className="bg-white/50 border-orange-400/20 focus:border-orange-400 text-sm font-mono"
@@ -1716,7 +1723,7 @@ export default function ChessPage() {
                                   >
                                     <Share2 className="w-4 h-4" />
                                   </Button>
-                                </div>
+                          </div>
                                 <p className="text-xs text-gray-600 dark:text-gray-400">
                                   Share this link with friends to invite them directly to your lobby
                                 </p>
@@ -1774,7 +1781,7 @@ export default function ChessPage() {
                               <>
                                 <div className="space-y-3">
                                   <Label className="text-gray-800 dark:text-white font-semibold text-sm">Lobby Type</Label>
-                                  <Select 
+                            <Select 
                                     value={lobbyForm.type}
                                     onValueChange={(value: 'open' | 'private') => 
                                       setLobbyForm(prev => ({ ...prev, type: value }))}
@@ -1810,32 +1817,32 @@ export default function ChessPage() {
                                   <Label className="text-gray-800 dark:text-white font-semibold text-sm">Time Control</Label>
                                   <Select 
                                     value={`${lobbyForm.timeControl}-${lobbyForm.increment}`}
-                                    onValueChange={(value) => {
-                                      const [initial, increment] = value.split('-').map(Number)
+                              onValueChange={(value) => {
+                                const [initial, increment] = value.split('-').map(Number)
                                       setLobbyForm(prev => ({ ...prev, timeControl: initial, increment }))
-                                    }}
-                                  >
+                              }}
+                            >
                                     <SelectTrigger className="bg-white/20 border-orange-400/20 hover:border-orange-400/40 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all duration-200">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
                                       <SelectItem value="180-2">⚡ 3+2 (Blitz)</SelectItem>
                                       <SelectItem value="300-5">🚀 5+5 (Blitz)</SelectItem>
                                       <SelectItem value="600-10">🎯 10+10 (Rapid)</SelectItem>
                                       <SelectItem value="900-15">🏆 15+15 (Rapid)</SelectItem>
                                       <SelectItem value="1800-30">👑 30+30 (Classical)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                              </SelectContent>
+                            </Select>
+                          </div>
 
                                 <div className="flex gap-3">
-                                  <Button 
+                          <Button 
                                     onClick={() => setShowCreateLobby(false)}
                                     variant="outline"
                                     className="flex-1 border-orange-400/30 hover:bg-orange-50/50 hover:border-orange-400/50"
                                   >
                                     Cancel
-                                  </Button>
+                          </Button>
                                   <Button 
                                     onClick={createLobby}
                                     className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
@@ -2081,10 +2088,10 @@ export default function ChessPage() {
                     <div className="lg:col-span-1">
                       <Card className="backdrop-blur-lg bg-white/10 border border-white/20 shadow-2xl">
                         <CardHeader>
-                                                      <CardTitle className="text-gray-800 dark:text-white flex items-center gap-2">
+                          <CardTitle className="text-gray-800 dark:text-white flex items-center gap-2">
                               <Star className="w-5 h-5 text-orange-600" />
-                              Your Chess Stats
-                            </CardTitle>
+                            Your Chess Stats
+                          </CardTitle>
                         </CardHeader>
                         <CardContent>
                           {connected && chessStats ? (

@@ -1,21 +1,52 @@
+require('dotenv').config()
 const express = require('express')
 const http = require('http')
 const socketIo = require('socket.io')
 const cors = require('cors')
+const rateLimit = require('express-rate-limit')
+const helmet = require('helmet')
 
 const app = express()
 const server = http.createServer(app)
 
+// Environment variables with defaults
+const PORT = process.env.PORT || 3001
+const NODE_ENV = process.env.NODE_ENV || 'development'
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
+const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD || 'https://your-domain.com'
+
+// Configure allowed origins based on environment
+const allowedOrigins = NODE_ENV === 'production' 
+  ? [FRONTEND_URL_PROD, FRONTEND_URL]
+  : [FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:3000']
+
+// Security middleware
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false // Disable CSP for WebSocket connections
+}))
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+app.use('/health', limiter)
+
 // Configure CORS for both Express and Socket.IO
 app.use(cors({
-  origin: ["http://localhost:3000", "https://your-domain.com"],
+  origin: allowedOrigins,
   methods: ["GET", "POST"],
   credentials: true
 }))
 
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://your-domain.com"],
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -94,11 +125,17 @@ class ChessGame {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`)
   
-  // Store user info
+  // Store user info from handshake query
   const wallet = socket.handshake.query.wallet
-  if (wallet) {
+  if (wallet && typeof wallet === 'string') {
     connectedUsers.set(socket.id, { wallet, socketId: socket.id })
-    console.log(`Wallet ${wallet} connected`)
+    console.log(`Wallet ${wallet.slice(0, 8)}...${wallet.slice(-4)} connected`)
+    
+    // Send connection confirmation
+    socket.emit('authenticated', { wallet, timestamp: Date.now() })
+  } else {
+    console.log(`Connection without valid wallet: ${socket.id}`)
+    socket.emit('error', 'Wallet authentication required')
   }
   
   // Handle challenge sending
@@ -316,11 +353,11 @@ app.get('/health', (req, res) => {
   })
 })
 
-const PORT = process.env.PORT || 3001
-
 server.listen(PORT, () => {
   console.log(`Chess WebSocket server running on port ${PORT}`)
   console.log(`Health check available at http://localhost:${PORT}/health`)
+  console.log(`Environment: ${NODE_ENV}`)
+  console.log(`Allowed origins: ${allowedOrigins.join(', ')}`)
 })
 
 // Cleanup interval for expired challenges (remove after 5 minutes)
