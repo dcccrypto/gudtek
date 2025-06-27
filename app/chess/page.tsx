@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useSearchParams } from 'next/navigation'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
@@ -97,9 +98,25 @@ interface Challenge {
   timestamp: number
 }
 
-// Stockfish chess engine integration
+// Component that uses search params
+function LobbyURLHandler() {
+  const searchParams = useSearchParams()
+  const { connected, publicKey } = useWallet()
 
-export default function ChessPage() {
+  useEffect(() => {
+    const lobbyParam = searchParams.get('lobby')
+    if (lobbyParam && connected && publicKey) {
+      // Store in localStorage for ChessPageContent to pick up
+      localStorage.setItem('pendingLobbyJoin', lobbyParam)
+      window.dispatchEvent(new Event('lobbyJoinRequested'))
+    }
+  }, [searchParams, connected, publicKey])
+
+  return null
+}
+
+// Main chess component
+function ChessPageContent() {
   const { connected, publicKey } = useWallet()
   const [mounted, setMounted] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
@@ -983,15 +1000,6 @@ export default function ChessPage() {
   }
 
   // Lobby Functions
-  const searchParams = useSearchParams()
-
-  // Check for lobby URL parameter on mount
-  useEffect(() => {
-    const lobbyParam = searchParams.get('lobby')
-    if (lobbyParam && connected && publicKey) {
-      handleJoinLobbyFromURL(lobbyParam)
-    }
-  }, [searchParams, connected, publicKey])
 
   const handleJoinLobbyFromURL = async (lobbyCode: string) => {
     try {
@@ -1175,6 +1183,20 @@ export default function ChessPage() {
       loadOpenLobbies()
     }
   }, [mounted])
+
+  // Listen for lobby join requests from URL
+  useEffect(() => {
+    const handleLobbyJoinRequested = () => {
+      const pendingLobby = localStorage.getItem('pendingLobbyJoin')
+      if (pendingLobby) {
+        localStorage.removeItem('pendingLobbyJoin')
+        handleJoinLobbyFromURL(pendingLobby)
+      }
+    }
+
+    window.addEventListener('lobbyJoinRequested', handleLobbyJoinRequested)
+    return () => window.removeEventListener('lobbyJoinRequested', handleLobbyJoinRequested)
+  }, [handleJoinLobbyFromURL])
 
   if (!mounted) return null
 
@@ -2267,4 +2289,26 @@ export default function ChessPage() {
       />
     </div>
   )
-} 
+}
+
+// Main export with dynamic import to avoid SSR
+
+const ChessPageWithSuspense = () => (
+  <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 flex items-center justify-center">Loading...</div>}>
+    <LobbyURLHandler />
+    <ChessPageContent />
+  </Suspense>
+)
+
+// Disable SSR for the entire chess page
+export default dynamic(() => Promise.resolve(ChessPageWithSuspense), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
+        <p className="text-purple-600 text-lg">Loading Chess Game...</p>
+      </div>
+    </div>
+  )
+}) 
