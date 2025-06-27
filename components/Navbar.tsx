@@ -20,6 +20,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Game", href: "/game" },
     { name: "Chess", href: "/chess" },
+    { name: "Hackathon", href: "/hackathon" },
     { name: "Announcements", href: "/announcements" },
     { name: "Memes", href: "/memes" },
     { name: "GudMusic", href: "/music" },

@@ -55,7 +55,7 @@ export default function GudTekLanding() {
     { name: "Home", href: "#hero" },
     { name: "Game", href: "/game" },
     { name: "Announcements", href: "/announcements" },
-    { name: "Hackathon", href: "#hackathon" },
+    { name: "Hackathon", href: "/hackathon" },
     { name: "Tokenomics", href: "#tokenomics" },
     { name: "How to Buy", href: "#how-to-buy" },
     { name: "Chart", href: "#chart" },
@@ -241,17 +241,28 @@ export default function GudTekLanding() {
               </div>
             </motion.div>
 
-            {/* Hackathon Button */}
+            {/* Hackathon Leaderboard Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.6 }}
-              className="mb-12"
+              className="mb-12 flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
+              <Link href="/hackathon">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold px-8 py-4 text-lg rounded-xl shadow-xl transform hover:scale-105 transition-all duration-200 border-2 border-yellow-300"
+                  aria-label="View Hackathon Leaderboard"
+                >
+                  <Trophy className="mr-2 w-5 h-5" />
+                  🏆 Hackathon Leaderboard
+                </Button>
+              </Link>
+              
               <Button
                 size="lg"
                 onClick={() => window.open("https://hackathon.letsbonk.fun", "_blank")}
-                className="bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white font-bold px-10 py-4 text-lg rounded-xl shadow-xl transform hover:scale-105 transition-all duration-200 border-2 border-orange-300"
+                className="bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white font-bold px-8 py-4 text-lg rounded-xl shadow-xl transform hover:scale-105 transition-all duration-200 border-2 border-orange-300"
                 aria-label="Visit BONK Hackathon website"
               >
                 <ExternalLink className="mr-2 w-5 h-5" />
