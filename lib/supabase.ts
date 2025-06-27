@@ -1283,7 +1283,7 @@ export const createChessLobby = async (lobbyData: {
 }) => {
   try {
     // Generate a unique lobby code
-    let lobbyCode = ''
+    let lobbyCode!: string
     let codeExists = true
     
     while (codeExists) {
