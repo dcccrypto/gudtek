@@ -23,12 +23,17 @@ interface TokenHolder {
   first_prize: number
   second_prize: number
   third_prize: number
+  balance_percentage: number
 }
 
 interface LeaderboardData {
   success: boolean
   total_holders: number
+  total_eligible_holders: number
+  liquidity_pool_excluded: boolean
+  liquidity_pool_balance: number
   top_100: TokenHolder[]
+  total_top_100_balance: number
   last_updated: string
   prizes: {
     total_pools: {
@@ -41,6 +46,12 @@ interface LeaderboardData {
       second: number
       third: number
     }
+    distribution_method: string
+  }
+  prize_verification: {
+    total_first_distributed: number
+    total_second_distributed: number
+    total_third_distributed: number
   }
 }
 
@@ -230,7 +241,7 @@ export default function HackathonLeaderboard() {
                   <span className="text-sm font-black text-yellow-300">HACKATHON PRIZE DISTRIBUTION</span>
                 </div>
                 <p className="text-xs font-medium text-blue-100 text-center">
-                  Top 100 GUDTEK holders • 25% prize sharing • Equal distribution: $500 each
+                  Top 100 eligible GUDTEK holders • 25% prize sharing • Proportionate to holdings • LP excluded
                 </p>
               </div>
             </motion.div>
@@ -251,7 +262,7 @@ export default function HackathonLeaderboard() {
               transition={{ duration: 0.8, delay: 0.7 }}
               className="text-xl md:text-2xl font-bold text-gray-800 mb-8 max-w-3xl mx-auto"
             >
-              Top 100 GUDTEK holders equally share 25% of total hackathon prize pools
+              Top 100 eligible GUDTEK holders share 25% of total hackathon prize pools proportional to their holdings (liquidity pool excluded)
             </motion.p>
           
             {/* Stats Cards */}
@@ -265,21 +276,21 @@ export default function HackathonLeaderboard() {
                 <Trophy className="w-12 h-12 mx-auto mb-4 text-white" />
                 <h3 className="text-2xl font-black text-white mb-2">$140K</h3>
                 <p className="text-purple-100 font-bold">1st Place Total Prize</p>
-                <p className="text-sm text-purple-200 mt-1 font-medium">25% shared equally</p>
+                <p className="text-sm text-purple-200 mt-1 font-medium">25% shared proportionally</p>
               </div>
 
               <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-6 text-center shadow-xl border-2 border-blue-300">
                 <Medal className="w-12 h-12 mx-auto mb-4 text-white" />
                 <h3 className="text-2xl font-black text-white mb-2">$50K</h3>
                 <p className="text-blue-100 font-bold">2nd Place Total Prize</p>
-                <p className="text-sm text-blue-200 mt-1 font-medium">25% shared equally</p>
+                <p className="text-sm text-blue-200 mt-1 font-medium">25% shared proportionally</p>
               </div>
 
               <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl p-6 text-center shadow-xl border-2 border-green-300">
                 <Award className="w-12 h-12 mx-auto mb-4 text-white" />
                 <h3 className="text-2xl font-black text-white mb-2">$10K</h3>
                 <p className="text-green-100 font-bold">3rd Place Total Prize</p>
-                <p className="text-sm text-green-200 mt-1 font-medium">25% shared equally</p>
+                <p className="text-sm text-green-200 mt-1 font-medium">25% shared proportionally</p>
               </div>
             </motion.div>
           </motion.div>
@@ -299,7 +310,7 @@ export default function HackathonLeaderboard() {
                   <Wallet className="w-6 h-6" />
                   Check Your Eligibility
                 </h2>
-                <p className="text-gray-800">Connect your wallet to see if you qualify for the $500 prize distribution</p>
+                <p className="text-gray-800">Connect your wallet to see if you qualify for proportionate prize distribution</p>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-6">
@@ -382,12 +393,13 @@ export default function HackathonLeaderboard() {
                 <div>
                   <h2 className="text-3xl font-black text-gray-900 mb-2 flex items-center gap-2">
                     <Users className="w-8 h-8" />
-                    Top 100 GUDTEK Holders
+                    Top 100 Eligible GUDTEK Holders
                   </h2>
                   <p className="text-gray-800">
                     {leaderboardData && (
                       <>
                         Total Holders: <span className="font-bold">{leaderboardData.total_holders.toLocaleString()}</span> • 
+                        Eligible Holders: <span className="font-bold">{leaderboardData.total_eligible_holders?.toLocaleString()}</span> • 
                         Last Updated: <span className="font-bold">{new Date(leaderboardData.last_updated).toLocaleTimeString()}</span>
                       </>
                     )}
@@ -428,10 +440,11 @@ export default function HackathonLeaderboard() {
                         <TableHead className="w-16 text-white font-black text-sm">Rank</TableHead>
                         <TableHead className="text-white font-black text-sm">Wallet Address</TableHead>
                         <TableHead className="text-right text-white font-black text-sm">GUDTEK Balance</TableHead>
-                        <TableHead className="text-center hidden md:table-cell text-purple-200 font-black text-sm">1st Prize<br/>$350</TableHead>
-                        <TableHead className="text-center hidden md:table-cell text-blue-200 font-black text-sm">2nd Prize<br/>$125</TableHead>
-                        <TableHead className="text-center hidden md:table-cell text-green-200 font-black text-sm">3rd Prize<br/>$25</TableHead>
-                        <TableHead className="text-center md:hidden text-white font-black text-sm">Total Prize</TableHead>
+                        <TableHead className="text-center text-yellow-200 font-black text-sm">% Share</TableHead>
+                        <TableHead className="text-center hidden lg:table-cell text-purple-200 font-black text-sm">1st Prize</TableHead>
+                        <TableHead className="text-center hidden lg:table-cell text-blue-200 font-black text-sm">2nd Prize</TableHead>
+                        <TableHead className="text-center hidden lg:table-cell text-green-200 font-black text-sm">3rd Prize</TableHead>
+                        <TableHead className="text-center lg:hidden text-white font-black text-sm">Total Prize</TableHead>
                       </TableRow>
                     </TableHeader>
                   <TableBody>
@@ -466,29 +479,36 @@ export default function HackathonLeaderboard() {
                           {formatNumber(holder.balance)}
                         </TableCell>
                         
-                        {/* Desktop view - separate prize columns */}
-                        <TableCell className="text-center hidden md:table-cell">
+                        {/* Balance Percentage */}
+                        <TableCell className="text-center">
+                          <div className="bg-gradient-to-r from-yellow-500 to-amber-600 rounded-lg px-2 py-1 border border-yellow-400">
+                            <span className="text-white font-bold text-xs">{holder.balance_percentage.toFixed(2)}%</span>
+                          </div>
+                        </TableCell>
+                        
+                        {/* Large screens - separate prize columns */}
+                        <TableCell className="text-center hidden lg:table-cell">
                           <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg px-3 py-2 border border-purple-400">
-                            <span className="text-white font-bold text-sm">${holder.first_prize}</span>
+                            <span className="text-white font-bold text-sm">${holder.first_prize.toFixed(0)}</span>
                           </div>
                         </TableCell>
                         
-                        <TableCell className="text-center hidden md:table-cell">
+                        <TableCell className="text-center hidden lg:table-cell">
                           <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg px-3 py-2 border border-blue-400">
-                            <span className="text-white font-bold text-sm">${holder.second_prize}</span>
+                            <span className="text-white font-bold text-sm">${holder.second_prize.toFixed(0)}</span>
                           </div>
                         </TableCell>
                         
-                        <TableCell className="text-center hidden md:table-cell">
+                        <TableCell className="text-center hidden lg:table-cell">
                           <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg px-3 py-2 border border-green-400">
-                            <span className="text-white font-bold text-sm">${holder.third_prize}</span>
+                            <span className="text-white font-bold text-sm">${holder.third_prize.toFixed(0)}</span>
                           </div>
                         </TableCell>
                         
-                        {/* Mobile view - total prize */}
-                        <TableCell className="text-center md:hidden">
+                        {/* Mobile/tablet view - total prize */}
+                        <TableCell className="text-center lg:hidden">
                           <div className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-lg px-3 py-2 border border-orange-400">
-                            <span className="text-white font-bold text-sm">${holder.first_prize + holder.second_prize + holder.third_prize}</span>
+                            <span className="text-white font-bold text-sm">${(holder.first_prize + holder.second_prize + holder.third_prize).toFixed(0)}</span>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -526,7 +546,7 @@ export default function HackathonLeaderboard() {
               </h3>
               <div className="max-w-4xl mx-auto space-y-6">
                 <p className="text-xl font-bold text-gray-200 leading-relaxed">
-                  25% of each hackathon prize pool is equally distributed among all top 100 GUDTEK token holders
+                  25% of each hackathon prize pool is distributed among top 100 eligible GUDTEK token holders proportional to their holdings (liquidity pool excluded)
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
@@ -552,7 +572,7 @@ export default function HackathonLeaderboard() {
                 
                 <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-xl p-6 border border-orange-400/30 mt-8">
                   <p className="text-lg text-gray-100 font-medium">
-                    🎯 Equal Distribution: Every top 100 holder receives their share from all qualifying hackathon placements
+                    🎯 Proportionate Distribution: Top 100 eligible holders receive prize shares proportional to their token holdings (liquidity pool excluded)
                   </p>
                 </div>
               </div>

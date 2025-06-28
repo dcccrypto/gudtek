@@ -20,6 +20,7 @@ interface TokenHolder {
   first_prize: number
   second_prize: number
   third_prize: number
+  balance_percentage: number
 }
 
 // Total hackathon prize pools
@@ -113,18 +114,17 @@ function consolidateHolders(tokenAccounts: TokenAccount[]): Map<string, number> 
   return holdersMap
 }
 
-function calculatePrizes(rank: number): { first: number, second: number, third: number } {
-  // Only top 100 holders get prizes
-  if (rank > 100) {
-    return { first: 0, second: 0, third: 0 }
-  }
-
-  // Prize distribution: Equal split among all top 100 holders
-  // Each holder gets exactly 1/100th of each prize pool
+function calculateProportionatePrizes(balance: number, totalTop100Balance: number): { first: number, second: number, third: number, percentage: number } {
+  // Calculate the percentage of total tokens held by this holder within the top 100
+  const percentage = totalTop100Balance > 0 ? (balance / totalTop100Balance) : 0
+  
+  // Prize distribution: Proportionate to holdings within top 100
+  // Each holder gets their percentage share of each prize pool
   return {
-    first: HACKATHON_PRIZES.first / 100,   // $35K / 100 = $350 each
-    second: HACKATHON_PRIZES.second / 100, // $12.5K / 100 = $125 each  
-    third: HACKATHON_PRIZES.third / 100    // $2.5K / 100 = $25 each
+    first: HACKATHON_PRIZES.first * percentage,   // Share of $35K based on holdings
+    second: HACKATHON_PRIZES.second * percentage, // Share of $12.5K based on holdings
+    third: HACKATHON_PRIZES.third * percentage,   // Share of $2.5K based on holdings
+    percentage: percentage * 100 // Convert to percentage for display
   }
 }
 
@@ -146,36 +146,67 @@ export async function GET(request: NextRequest) {
     const holdersMap = consolidateHolders(tokenAccounts)
     
     // Convert to array and sort by balance
-    const sortedHolders = Array.from(holdersMap.entries())
+    const allSortedHolders = Array.from(holdersMap.entries())
       .map(([address, balance]) => ({ address, balance }))
       .sort((a, b) => b.balance - a.balance)
-      .slice(0, 100) // Get top 100
 
-    // Add ranking and prize calculations
+    // Skip the first holder (liquidity pool) and get the next 100 holders
+    const sortedHolders = allSortedHolders.slice(1, 101) // Skip index 0, take indices 1-100
+    
+    console.log(`Skipped liquidity pool holder with ${allSortedHolders[0]?.balance.toLocaleString()} GUDTEK`)
+    console.log(`Top eligible holder has ${sortedHolders[0]?.balance.toLocaleString()} GUDTEK`)
+
+    // Calculate total balance of top 100 eligible holders for proportionate distribution
+    const totalTop100Balance = sortedHolders.reduce((sum, holder) => sum + holder.balance, 0)
+    
+    console.log(`Total balance of top 100 eligible holders: ${totalTop100Balance.toLocaleString()} GUDTEK`)
+
+    // Add ranking and proportionate prize calculations
     const leaderboard: TokenHolder[] = sortedHolders.map((holder, index) => {
-      const rank = index + 1
-      const prizes = calculatePrizes(rank)
+      const rank = index + 1 // Start ranking from 1 for the eligible holders
+      const prizes = calculateProportionatePrizes(holder.balance, totalTop100Balance)
       
       return {
         address: holder.address,
         balance: holder.balance,
         rank: rank,
-        first_prize: prizes.first,
-        second_prize: prizes.second,
-        third_prize: prizes.third,
+        first_prize: Math.round(prizes.first * 100) / 100, // Round to 2 decimal places
+        second_prize: Math.round(prizes.second * 100) / 100,
+        third_prize: Math.round(prizes.third * 100) / 100,
+        balance_percentage: Math.round(prizes.percentage * 100) / 100
       }
     })
 
-    console.log(`Successfully processed ${leaderboard.length} holders`)
+    console.log(`Successfully processed ${leaderboard.length} eligible holders with proportionate prize distribution`)
+
+    // Calculate verification totals to ensure we're distributing the full prize pools
+    const totalFirstPrizes = leaderboard.reduce((sum, holder) => sum + holder.first_prize, 0)
+    const totalSecondPrizes = leaderboard.reduce((sum, holder) => sum + holder.second_prize, 0)
+    const totalThirdPrizes = leaderboard.reduce((sum, holder) => sum + holder.third_prize, 0)
+    
+    console.log(`Prize distribution verification:`)
+    console.log(`First place prizes total: $${totalFirstPrizes.toLocaleString()} (expected: $${HACKATHON_PRIZES.first.toLocaleString()})`)
+    console.log(`Second place prizes total: $${totalSecondPrizes.toLocaleString()} (expected: $${HACKATHON_PRIZES.second.toLocaleString()})`)
+    console.log(`Third place prizes total: $${totalThirdPrizes.toLocaleString()} (expected: $${HACKATHON_PRIZES.third.toLocaleString()})`)
 
     return NextResponse.json({
       success: true,
       total_holders: holdersMap.size,
+      total_eligible_holders: holdersMap.size - 1, // Subtract 1 for the liquidity pool
+      liquidity_pool_excluded: true,
+      liquidity_pool_balance: allSortedHolders[0]?.balance || 0,
       top_100: leaderboard,
+      total_top_100_balance: totalTop100Balance,
       last_updated: new Date().toISOString(),
       prizes: {
         total_pools: TOTAL_HACKATHON_PRIZES,
-        distribution_pools: HACKATHON_PRIZES
+        distribution_pools: HACKATHON_PRIZES,
+        distribution_method: 'proportionate_to_holdings'
+      },
+      prize_verification: {
+        total_first_distributed: Math.round(totalFirstPrizes * 100) / 100,
+        total_second_distributed: Math.round(totalSecondPrizes * 100) / 100,
+        total_third_distributed: Math.round(totalThirdPrizes * 100) / 100
       }
     })
 
