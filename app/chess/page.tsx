@@ -245,6 +245,31 @@ function ChessPageContent() {
       socket.on('connect', () => {
         console.log('✅ Connected to chess server')
         console.log('🔗 Socket ID:', socket.id)
+        
+        // Re-attach all event listeners on reconnection to ensure they're active
+        console.log('🔄 Re-attaching event listeners...')
+        
+        // Remove any existing listeners to prevent duplicates
+        socket.off('challenge-received')
+        socket.off('challenge-accepted')
+        socket.off('challenge-declined')
+        socket.off('game-move')
+        socket.off('lobby-move-received')
+        socket.off('game-end')
+        socket.off('opponent-disconnected')
+        socket.off('error')
+        
+        // Re-attach all listeners
+        socket.on('challenge-received', handleChallengeReceived)
+        socket.on('challenge-accepted', handleChallengeAccepted)
+        socket.on('challenge-declined', handleChallengeDeclined)
+        socket.on('game-move', handleOpponentMove)
+        socket.on('lobby-move-received', handleLobbyMoveReceived)
+        socket.on('game-end', handleGameEnd)
+        socket.on('opponent-disconnected', handleOpponentDisconnected)
+        socket.on('error', handleSocketError)
+        
+        console.log('✅ All event listeners attached')
       })
       
       socket.on('authenticated', (data) => {
@@ -252,6 +277,7 @@ function ChessPageContent() {
         console.log('⏰ Authentication timestamp:', new Date(data.timestamp).toISOString())
       })
       
+      // Initial event listener attachment
       socket.on('challenge-received', handleChallengeReceived)
       socket.on('challenge-accepted', handleChallengeAccepted)
       socket.on('challenge-declined', handleChallengeDeclined)
@@ -268,6 +294,7 @@ function ChessPageContent() {
       
       socket.on('disconnect', (reason) => {
         console.warn('⚠️ Socket disconnected:', reason)
+        console.log('🔄 Will attempt to reconnect...')
       })
       
       socket.on('reconnect', (attemptNumber) => {
@@ -278,8 +305,14 @@ function ChessPageContent() {
         console.error('❌ Socket reconnection error:', error)
       })
       
+      // Test event listener attachment
+      socket.on('test-event', (data) => {
+        console.log('🧪 Test event received:', data)
+      })
+      
       return () => {
         console.log('🔌 Cleaning up socket connection')
+        socket.off() // Remove all listeners
         socket.disconnect()
       }
     }
@@ -363,13 +396,27 @@ function ChessPageContent() {
   }
 
   const handleLobbyMoveReceived = async (data: { gameId: string; move: string; from: string; fen?: string }) => {
-    console.log('🎯 Received lobby move:', data)
+    console.log('🎯 *** LOBBY MOVE RECEIVED *** 🎯')
+    console.log('📥 Raw data received:', JSON.stringify(data, null, 2))
     console.log('🔍 Current game state:', {
       gameId: gameState.gameId,
       opponentWallet: gameState.opponent?.wallet,
       playerColor: gameState.playerColor,
-      currentTurn: gameState.chess.turn()
+      currentTurn: gameState.chess.turn(),
+      gameMode: gameState.mode,
+      gameStatus: gameState.status
     })
+    
+    // Validate that we have the required data
+    if (!data || typeof data !== 'object') {
+      console.error('❌ Invalid data received:', data)
+      return
+    }
+    
+    if (!data.gameId || !data.move || !data.from) {
+      console.error('❌ Missing required fields in move data:', data)
+      return
+    }
     
     try {
       // Validate this is for the current game
@@ -390,14 +437,29 @@ function ChessPageContent() {
         return
       }
       
-      console.log('✅ Move validation passed, applying move:', data.move)
+      // Check if we're in multiplayer mode
+      if (gameState.mode !== 'multiplayer') {
+        console.warn('❌ Received move but not in multiplayer mode:', gameState.mode)
+        return
+      }
+      
+      // Check if game is in playing status
+      if (gameState.status !== 'playing') {
+        console.warn('❌ Received move but game not in playing status:', gameState.status)
+        return
+      }
+      
+      console.log('✅ All validations passed, applying move:', data.move)
       
       setGameState(prev => {
+        console.log('🎯 Updating game state with new move...')
         const newChess = new Chess(prev.chess.fen())
+        
         try {
           const moveResult = newChess.move(data.move)
-          console.log('✅ Applied opponent move:', moveResult.san)
-          console.log('🎯 New board position:', newChess.fen())
+          console.log('✅ Successfully applied opponent move:', moveResult.san)
+          console.log('🎯 New board position FEN:', newChess.fen())
+          console.log('🔄 Game turn is now:', newChess.turn() === 'w' ? 'White' : 'Black')
           
           return {
             ...prev,
@@ -406,20 +468,33 @@ function ChessPageContent() {
           }
         } catch (error) {
           console.error('❌ Invalid lobby move received:', data.move, error)
+          console.error('❌ Current board state:', prev.chess.fen())
           return prev
         }
       })
       
-      // Save the opponent's move to database
+      // Save the opponent's move to database (non-blocking)
       try {
+        console.log('💾 Attempting to save opponent move to database...')
         await saveGameMove({ san: data.move, from: '', to: '', promotion: '' }, 1000)
         console.log('✅ Opponent move saved to database')
       } catch (error) {
-        console.error('❌ Failed to save opponent move:', error)
+        console.error('❌ Failed to save opponent move to database (non-critical):', error)
+        // Don't return here - database error shouldn't prevent move from being applied
       }
       
+      console.log('🎉 Successfully processed opponent move:', data.move)
+      
     } catch (error) {
-      console.error('❌ Error handling lobby move:', error)
+      console.error('❌ Critical error handling lobby move:', error)
+      console.error('❌ Error stack:', error.stack)
+      
+      // Show error to user
+      toast({
+        title: "Move Sync Error",
+        description: "Failed to process opponent's move. Please refresh the page.",
+        variant: "destructive",
+      })
     }
   }
 

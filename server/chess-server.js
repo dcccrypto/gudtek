@@ -439,6 +439,78 @@ app.get('/debug/users', (req, res) => {
   })
 })
 
+// Test endpoint to send test events to specific users
+app.post('/debug/test-event/:wallet', (req, res) => {
+  const { wallet } = req.params
+  const { message = 'Test message from server' } = req.body
+  
+  console.log(`🧪 Test event requested for wallet: ${wallet.slice(0, 8)}...`)
+  
+  // Find user by wallet
+  const targetUser = Array.from(connectedUsers.values()).find(user => user.wallet === wallet)
+  
+  if (!targetUser) {
+    console.log(`❌ User ${wallet.slice(0, 8)}... not found for test`)
+    return res.status(404).json({ error: 'User not found or not connected' })
+  }
+  
+  console.log(`✅ Sending test event to ${targetUser.wallet.slice(0, 8)}... (${targetUser.socketId})`)
+  
+  // Send test event
+  io.to(targetUser.socketId).emit('test-event', {
+    message,
+    timestamp: Date.now(),
+    from: 'server'
+  })
+  
+  res.json({ 
+    success: true, 
+    sentTo: {
+      wallet: targetUser.wallet.slice(0, 8) + '...',
+      socketId: targetUser.socketId
+    },
+    message 
+  })
+})
+
+// Test endpoint to verify lobby-move functionality
+app.post('/debug/test-lobby-move', (req, res) => {
+  const { fromWallet, toWallet, gameId, move = 'e4' } = req.body
+  
+  if (!fromWallet || !toWallet || !gameId) {
+    return res.status(400).json({ error: 'Missing required fields: fromWallet, toWallet, gameId' })
+  }
+  
+  console.log(`🧪 Test lobby move: ${fromWallet.slice(0, 8)}... -> ${toWallet.slice(0, 8)}...`)
+  
+  // Find target user
+  const targetUser = Array.from(connectedUsers.values()).find(user => user.wallet === toWallet)
+  
+  if (!targetUser) {
+    return res.status(404).json({ error: 'Target user not found or not connected' })
+  }
+  
+  // Send test lobby move
+  const testMoveData = {
+    gameId,
+    move,
+    from: fromWallet,
+    fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+  }
+  
+  console.log(`📡 Sending test lobby-move-received:`, testMoveData)
+  io.to(targetUser.socketId).emit('lobby-move-received', testMoveData)
+  
+  res.json({ 
+    success: true, 
+    testMove: testMoveData,
+    sentTo: {
+      wallet: targetUser.wallet.slice(0, 8) + '...',
+      socketId: targetUser.socketId
+    }
+  })
+})
+
 server.listen(PORT, () => {
   console.log(`🚀 Chess WebSocket server running on port ${PORT}`)
   console.log(`🏥 Health check available at http://localhost:${PORT}/health`)
