@@ -1310,6 +1310,9 @@ function ChessPageContent() {
           status: 'playing',
           gameId: data.gameData.id,
           playerColor: data.gameData.player_white === publicKey?.toString() ? 'w' : 'b',
+          opponent: {
+            wallet: data.gameData.player_white === publicKey?.toString() ? data.gameData.player_black : data.gameData.player_white
+          },
           chess: new Chess()
         }))
         
@@ -1354,6 +1357,9 @@ function ChessPageContent() {
         status: 'playing',
         gameId: gameData.id,
         playerColor: gameData.player_white === publicKey?.toString() ? 'w' : 'b',
+        opponent: {
+          wallet: gameData.player_white === publicKey?.toString() ? gameData.player_black : gameData.player_white
+        },
         chess: new Chess()
       }))
       
