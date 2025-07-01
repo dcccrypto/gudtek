@@ -490,7 +490,10 @@ function ChessPageContent() {
       
     } catch (error) {
       console.error('❌ Critical error handling lobby move:', error)
-      console.error('❌ Error stack:', error.stack)
+      // Narrow the error type before accessing its stack trace to satisfy TypeScript strict mode
+      if (error instanceof Error) {
+        console.error('❌ Error stack:', error.stack)
+      }
       
       // Show error to user
       toast({
