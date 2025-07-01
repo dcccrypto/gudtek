@@ -420,10 +420,13 @@ function ChessPageContent() {
     
     try {
       // Validate this is for the current game
-      if (gameState.gameId !== data.gameId) {
+      const effectiveGameId = gameState.gameId || currentGameId || null as any
+      if (effectiveGameId !== data.gameId) {
         console.warn('❌ Received move for different game:', { 
           received: data.gameId, 
-          current: gameState.gameId 
+          currentGameId: effectiveGameId,
+          gameStateGameId: gameState.gameId,
+          currentGameIdState: currentGameId 
         })
         return
       }
