@@ -247,12 +247,12 @@ function ChessPageContent() {
         console.log('Wallet authenticated:', data.wallet.slice(0, 8) + '...')
       })
       
-      socket.on('challenge_received', handleChallengeReceived)
-      socket.on('challenge_accepted', handleChallengeAccepted)
-      socket.on('challenge_declined', handleChallengeDeclined)
-      socket.on('opponent_move', handleOpponentMove)
-      socket.on('game_end', handleGameEnd)
-      socket.on('opponent_disconnected', handleOpponentDisconnected)
+      socket.on('challenge-received', handleChallengeReceived)
+      socket.on('challenge-accepted', handleChallengeAccepted)
+      socket.on('challenge-declined', handleChallengeDeclined)
+      socket.on('game-move', handleOpponentMove)
+      socket.on('game-end', handleGameEnd)
+      socket.on('opponent-disconnected', handleOpponentDisconnected)
       socket.on('error', handleSocketError)
       
       return () => {
@@ -377,14 +377,14 @@ function ChessPageContent() {
   const acceptChallenge = (challengeId: string) => {
     if (!socketRef.current) return
     
-    socketRef.current.emit('accept_challenge', { challengeId })
+    socketRef.current.emit('accept-challenge', { challengeId })
     setChallenges(prev => prev.filter(c => c.id !== challengeId))
   }
 
   const declineChallenge = (challengeId: string) => {
     if (!socketRef.current) return
     
-    socketRef.current.emit('decline_challenge', { challengeId })
+    socketRef.current.emit('decline-challenge', { challengeId })
     setChallenges(prev => prev.filter(c => c.id !== challengeId))
   }
 
@@ -531,7 +531,7 @@ function ChessPageContent() {
 
       // Send move to opponent if in multiplayer
       if (gameState.mode === 'multiplayer' && socketRef.current) {
-        socketRef.current.emit('make_move', {
+        socketRef.current.emit('make-move', {
           gameId: gameState.gameId,
           move: actualMove.san
         })
