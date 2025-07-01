@@ -317,34 +317,35 @@ io.on('connection', (socket) => {
       socketId: u.socketId
     })))
     
-    // Find target user with exact wallet match
-    const targetUser = Array.from(connectedUsers.values()).find(user => {
+    // Find ALL target user sockets with exact wallet match
+    const targetUsers = Array.from(connectedUsers.values()).filter(user => {
       const match = user.wallet === to
       console.log(`🔎 Checking ${user.wallet.slice(0, 8)}... === ${to.slice(0, 8)}...: ${match}`)
       return match
     })
-    
-    if (!targetUser) {
+
+    if (targetUsers.length === 0) {
       console.error(`❌ Target user ${to.slice(0, 8)}... not found online`)
       console.log(`🔍 Available users:`, Array.from(connectedUsers.values()).map(u => u.wallet.slice(0, 8) + '...'))
       socket.emit('error', 'Opponent not online')
       return
     }
-    
-    console.log(`✅ Target user found: ${targetUser.wallet.slice(0, 8)}... (socket: ${targetUser.socketId})`)
-    
-    // Send move to opponent
+
+    // Prepare move payload
     const moveData = {
       gameId,
       move,
       from,
       fen
     }
-    
-    console.log(`📡 Sending lobby-move-received to ${targetUser.socketId}:`, moveData)
-    io.to(targetUser.socketId).emit('lobby-move-received', moveData)
-    
-    console.log(`✅ Move ${move} sent from ${from.slice(0, 8)}... to ${to.slice(0, 8)}...`)
+
+    // Send move to all sockets belonging to the opponent wallet
+    targetUsers.forEach(user => {
+      console.log(`📡 Sending lobby-move-received to ${user.socketId}:`, moveData)
+      io.to(user.socketId).emit('lobby-move-received', moveData)
+    })
+
+    console.log(`✅ Move ${move} sent from ${from.slice(0, 8)}... to ${to.slice(0, 8)}... (${targetUsers.length} socket(s))`)
   })
   
   // Handle game end (resignation, draw offer, etc.)
