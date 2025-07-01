@@ -13,11 +13,11 @@ const server = http.createServer(app)
 const PORT = process.env.PORT || 3001
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
-const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD || 'https://your-domain.com'
+const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD || 'https://gudtek-82ta.vercel.app'
 
 // Configure allowed origins based on environment
 const allowedOrigins = NODE_ENV === 'production' 
-  ? [FRONTEND_URL_PROD, FRONTEND_URL]
+  ? [FRONTEND_URL_PROD, FRONTEND_URL, 'https://gudtek-82ta.vercel.app', 'https://www.gudtek.com', 'https://gudtek.com']
   : [FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:3000']
 
 // Security middleware

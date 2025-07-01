@@ -228,7 +228,7 @@ function ChessPageContent() {
   // Initialize socket connection
   useEffect(() => {
     if (connected && publicKey) {
-      const serverUrl = process.env.NEXT_PUBLIC_CHESS_SERVER_URL || 'ws://localhost:3001'
+      const serverUrl = process.env.NEXT_PUBLIC_CHESS_SERVER_URL || 'https://gudtek-production.up.railway.app'
       socketRef.current = io(serverUrl, {
         transports: ['websocket'],
         timeout: 10000,
