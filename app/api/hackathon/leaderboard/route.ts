@@ -117,7 +117,7 @@ function consolidateHolders(tokenAccounts: TokenAccount[]): Map<string, number> 
 function calculateProportionatePrizes(balance: number, totalTop100Balance: number): { first: number, second: number, third: number, percentage: number } {
   // Calculate the percentage of total tokens held by this holder within the top 100
   const percentage = totalTop100Balance > 0 ? (balance / totalTop100Balance) : 0
-  
+
   // Prize distribution: Proportionate to holdings within top 100
   // Each holder gets their percentage share of each prize pool
   return {

@@ -9,12 +9,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lobby code and wallet address are required' }, { status: 400 })
     }
 
-    const lobby = await joinChessLobby(lobbyCode, walletAddress)
+    const result = await joinChessLobby(lobbyCode, walletAddress)
 
-    return NextResponse.json({
-      success: true,
-      lobby
-    })
+    // Handle different response formats from the updated joinChessLobby function
+    if (result.gameData) {
+      // Game has already started or was auto-started
+      return NextResponse.json({
+        success: true,
+        lobby: result.lobby,
+        gameData: result.gameData,
+        autoStarted: result.autoStarted || false
+      })
+    } else if (result.lobby) {
+      // Still in lobby phase
+      return NextResponse.json({
+        success: true,
+        lobby: result.lobby
+      })
+    } else {
+      // Fallback for older response format
+      return NextResponse.json({
+        success: true,
+        lobby: result
+      })
+    }
   } catch (error: any) {
     console.error('Error joining lobby:', error)
     return NextResponse.json(

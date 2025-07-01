@@ -1001,18 +1001,52 @@ function ChessPageContent() {
 
   // Lobby Functions
 
-  const handleJoinLobbyFromURL = async (lobbyCode: string) => {
+  // Enhanced lobby join from URL with status checking
+  const handleJoinLobbyFromURL = useCallback(async (lobbyCode: string) => {
+    if (!publicKey) return
+    
+    console.log('🔗 Attempting to join lobby from URL:', lobbyCode)
+    
     try {
+      // First check lobby status
+      const gameStarted = await checkLobbyStatus(lobbyCode)
+      if (gameStarted) {
+        return // Game already started, we're done
+      }
+      
+      // If not started, try to join the lobby
       await joinLobbyByCode(lobbyCode)
     } catch (error) {
       console.error('Error joining lobby from URL:', error)
       toast({
-        title: "Lobby Error",
+        title: "Error",
         description: "Could not join the lobby. It may have expired or be full.",
         variant: "destructive"
       })
     }
-  }
+  }, [publicKey])
+
+  // Add periodic lobby status checking
+  useEffect(() => {
+    let lobbyStatusInterval: NodeJS.Timeout | null = null
+    
+    if (currentLobby && currentLobby.status !== 'started') {
+      lobbyStatusInterval = setInterval(async () => {
+        const gameStarted = await checkLobbyStatus(currentLobby.lobby_code)
+        if (gameStarted) {
+          if (lobbyStatusInterval) {
+            clearInterval(lobbyStatusInterval)
+          }
+        }
+      }, 2000) // Check every 2 seconds
+    }
+    
+    return () => {
+      if (lobbyStatusInterval) {
+        clearInterval(lobbyStatusInterval)
+      }
+    }
+  }, [currentLobby, publicKey])
 
   const createLobby = async () => {
     if (!publicKey) return
@@ -1080,17 +1114,40 @@ function ChessPageContent() {
         throw new Error(data.error || 'Failed to join lobby')
       }
 
-      setCurrentLobby(data.lobby)
-      setLobbyCode('')
-      
-      toast({
-        title: "Joined Lobby!",
-        description: `You're now in lobby ${data.lobby.lobby_code}`
-      })
+      // Handle different response formats
+      if (data.gameData) {
+        // Game has already started or was auto-started
+        console.log('🎮 Game found/started:', data.gameData)
+        
+        setGameState(prev => ({
+          ...prev,
+          mode: 'multiplayer',
+          status: 'playing',
+          gameId: data.gameData.id,
+          playerColor: data.gameData.player_white === publicKey?.toString() ? 'w' : 'b',
+          chess: new Chess()
+        }))
+        
+        setCurrentLobby(null) // Clear lobby since we're now in game
+        
+        toast({
+          title: data.autoStarted ? "Game Auto-Started!" : "Game Found!",
+          description: `Playing as ${data.gameData.player_white === publicKey?.toString() ? 'White' : 'Black'}`
+        })
+      } else if (data.lobby) {
+        // Still in lobby phase
+        setCurrentLobby(data.lobby)
+        setLobbyCode('')
+        
+        toast({
+          title: "Joined Lobby!",
+          description: `You're now in lobby ${data.lobby.lobby_code} (${data.lobby.current_players}/${data.lobby.max_players})`
+        })
 
-      // Auto-start game if lobby is full
-      if (data.lobby.current_players >= data.lobby.max_players) {
-        setTimeout(() => startLobbyGame(data.lobby.id), 1000)
+        // Auto-start game if lobby is full
+        if (data.lobby.current_players >= data.lobby.max_players) {
+          setTimeout(() => startLobbyGame(data.lobby.id), 1000)
+        }
       }
     } catch (error: any) {
       console.error('Error joining lobby:', error)
@@ -1197,6 +1254,47 @@ function ChessPageContent() {
     window.addEventListener('lobbyJoinRequested', handleLobbyJoinRequested)
     return () => window.removeEventListener('lobbyJoinRequested', handleLobbyJoinRequested)
   }, [handleJoinLobbyFromURL])
+
+  // Add function to check lobby status periodically
+  const checkLobbyStatus = async (lobbyCode: string) => {
+    if (!publicKey) return
+
+    try {
+      const response = await fetch(`/api/chess/lobby/${lobbyCode}?wallet=${publicKey.toString()}`)
+      const data = await response.json()
+      
+      if (data.success && data.hasStarted && data.gameData) {
+        console.log('🎮 Lobby has transitioned to game:', data.gameData)
+        
+        setGameState(prev => ({
+          ...prev,
+          mode: 'multiplayer',
+          status: 'playing',
+          gameId: data.gameData.id,
+          playerColor: data.gameData.player_white === publicKey?.toString() ? 'w' : 'b',
+          chess: new Chess()
+        }))
+        
+        setCurrentLobby(null)
+        
+        toast({
+          title: "Game Started!",
+          description: `Playing as ${data.gameData.player_white === publicKey?.toString() ? 'White' : 'Black'}`
+        })
+        
+        return true // Signal that game has started
+      }
+      
+      if (data.success && data.lobby) {
+        setCurrentLobby(data.lobby)
+      }
+      
+      return false
+    } catch (error) {
+      console.error('Error checking lobby status:', error)
+      return false
+    }
+  }
 
   if (!mounted) return null
 

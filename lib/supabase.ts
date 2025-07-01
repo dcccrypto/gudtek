@@ -1337,20 +1337,51 @@ export const createChessLobby = async (lobbyData: {
 
 export const joinChessLobby = async (lobbyCode: string, walletAddress: string) => {
   try {
-    // First, get the lobby
+    // First, get the lobby including current participants
     const { data: lobby, error: lobbyError } = await supabase
       .from('chess_lobbies')
-      .select('*')
+      .select(`
+        *,
+        chess_lobby_participants(wallet_address, joined_at)
+      `)
       .eq('lobby_code', lobbyCode)
-      .eq('status', 'waiting')
       .single()
 
     if (lobbyError || !lobby) {
-      throw new Error('Lobby not found or no longer available')
+      throw new Error('Lobby not found')
+    }
+
+    // If lobby has already started, return the game info
+    if (lobby.status === 'started' && lobby.game_id) {
+      // Check if user is a participant in this lobby
+      const isParticipant = lobby.chess_lobby_participants.some(
+        (p: any) => p.wallet_address === walletAddress
+      )
+      
+      if (isParticipant) {
+        // Get the game data
+        const { data: gameData, error: gameError } = await supabase
+          .from('chess_games')
+          .select('*')
+          .eq('id', lobby.game_id)
+          .single()
+        
+        if (gameData) {
+          return { lobby, gameData }
+        }
+      }
+      
+      throw new Error('Game has already started')
+    }
+
+    // Check if lobby is still accepting players
+    if (lobby.status !== 'waiting' && lobby.status !== 'full') {
+      throw new Error('Lobby is no longer available')
     }
 
     // Check if lobby is full
-    if (lobby.current_players >= lobby.max_players) {
+    const currentParticipants = lobby.chess_lobby_participants?.length || 0
+    if (currentParticipants >= lobby.max_players) {
       throw new Error('Lobby is full')
     }
 
@@ -1362,37 +1393,47 @@ export const joinChessLobby = async (lobbyCode: string, walletAddress: string) =
     }
 
     // Check if user is already in the lobby
-    const { data: existingParticipant } = await supabase
-      .from('chess_lobby_participants')
-      .select('id')
-      .eq('lobby_id', lobby.id)
-      .eq('wallet_address', walletAddress)
-      .single()
+    const existingParticipant = lobby.chess_lobby_participants.find(
+      (p: any) => p.wallet_address === walletAddress
+    )
 
-    if (existingParticipant) {
-      return lobby // Already in lobby
+    if (!existingParticipant) {
+      // Add participant
+      const { error: participantError } = await supabase
+        .from('chess_lobby_participants')
+        .insert({
+          lobby_id: lobby.id,
+          wallet_address: walletAddress
+        })
+
+      if (participantError) throw participantError
     }
 
-    // Add participant
-    const { error: participantError } = await supabase
-      .from('chess_lobby_participants')
-      .insert({
-        lobby_id: lobby.id,
-        wallet_address: walletAddress
-      })
-
-    if (participantError) throw participantError
-
-    // Get updated lobby
+    // Get updated lobby with new participant count
     const { data: updatedLobby, error: updateError } = await supabase
       .from('chess_lobbies')
-      .select('*')
+      .select(`
+        *,
+        chess_lobby_participants(wallet_address, joined_at)
+      `)
       .eq('id', lobby.id)
       .single()
 
     if (updateError) throw updateError
 
-    return updatedLobby
+    // Check if lobby is now full and should start game
+    if (updatedLobby.current_players >= updatedLobby.max_players && updatedLobby.status === 'full') {
+      try {
+        const gameData = await startGameFromLobby(updatedLobby.id)
+        return { lobby: updatedLobby, gameData, autoStarted: true }
+      } catch (gameError) {
+        console.error('Failed to auto-start game:', gameError)
+        // Return lobby even if game start failed
+        return { lobby: updatedLobby }
+      }
+    }
+
+    return { lobby: updatedLobby }
   } catch (error) {
     console.error('Error joining chess lobby:', error)
     throw error
@@ -1519,5 +1560,50 @@ export const updateLobbyStatus = async (lobbyId: string, status: 'waiting' | 'fu
   } catch (error) {
     console.error('Error updating lobby status:', error)
     throw error
+  }
+}
+
+// Add function to check lobby status and get game if started
+export const checkLobbyStatus = async (lobbyCode: string, walletAddress: string) => {
+  try {
+    const { data: lobby, error } = await supabase
+      .from('chess_lobbies')
+      .select(`
+        *,
+        chess_lobby_participants(wallet_address, joined_at)
+      `)
+      .eq('lobby_code', lobbyCode)
+      .single()
+
+    if (error || !lobby) {
+      return null
+    }
+
+    // Check if user is a participant
+    const isParticipant = lobby.chess_lobby_participants.some(
+      (p: any) => p.wallet_address === walletAddress
+    )
+
+    if (!isParticipant) {
+      return { lobby, isParticipant: false }
+    }
+
+    // If lobby has started, get the game data
+    if (lobby.status === 'started' && lobby.game_id) {
+      const { data: gameData, error: gameError } = await supabase
+        .from('chess_games')
+        .select('*')
+        .eq('id', lobby.game_id)
+        .single()
+
+      if (gameData) {
+        return { lobby, gameData, isParticipant: true, hasStarted: true }
+      }
+    }
+
+    return { lobby, isParticipant: true, hasStarted: false }
+  } catch (error) {
+    console.error('Error checking lobby status:', error)
+    return null
   }
 }
