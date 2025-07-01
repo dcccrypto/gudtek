@@ -229,6 +229,9 @@ function ChessPageContent() {
   useEffect(() => {
     if (connected && publicKey) {
       const serverUrl = process.env.NEXT_PUBLIC_CHESS_SERVER_URL || 'https://gudtek-production.up.railway.app'
+      console.log('🔌 Initializing socket connection to:', serverUrl)
+      console.log('👤 User wallet:', publicKey.toString().slice(0, 8) + '...')
+      
       socketRef.current = io(serverUrl, {
         transports: ['websocket'],
         timeout: 10000,
@@ -240,11 +243,13 @@ function ChessPageContent() {
       const socket = socketRef.current
       
       socket.on('connect', () => {
-        console.log('Connected to chess server')
+        console.log('✅ Connected to chess server')
+        console.log('🔗 Socket ID:', socket.id)
       })
       
       socket.on('authenticated', (data) => {
-        console.log('Wallet authenticated:', data.wallet.slice(0, 8) + '...')
+        console.log('✅ Wallet authenticated:', data.wallet.slice(0, 8) + '...')
+        console.log('⏰ Authentication timestamp:', new Date(data.timestamp).toISOString())
       })
       
       socket.on('challenge-received', handleChallengeReceived)
@@ -256,7 +261,25 @@ function ChessPageContent() {
       socket.on('opponent-disconnected', handleOpponentDisconnected)
       socket.on('error', handleSocketError)
       
+      // Enhanced connection debugging
+      socket.on('connect_error', (error) => {
+        console.error('❌ Socket connection error:', error)
+      })
+      
+      socket.on('disconnect', (reason) => {
+        console.warn('⚠️ Socket disconnected:', reason)
+      })
+      
+      socket.on('reconnect', (attemptNumber) => {
+        console.log('🔄 Socket reconnected after', attemptNumber, 'attempts')
+      })
+      
+      socket.on('reconnect_error', (error) => {
+        console.error('❌ Socket reconnection error:', error)
+      })
+      
       return () => {
+        console.log('🔌 Cleaning up socket connection')
         socket.disconnect()
       }
     }
@@ -341,25 +364,40 @@ function ChessPageContent() {
 
   const handleLobbyMoveReceived = async (data: { gameId: string; move: string; from: string; fen?: string }) => {
     console.log('🎯 Received lobby move:', data)
+    console.log('🔍 Current game state:', {
+      gameId: gameState.gameId,
+      opponentWallet: gameState.opponent?.wallet,
+      playerColor: gameState.playerColor,
+      currentTurn: gameState.chess.turn()
+    })
     
     try {
       // Validate this is for the current game
       if (gameState.gameId !== data.gameId) {
-        console.warn('Received move for different game:', { received: data.gameId, current: gameState.gameId })
+        console.warn('❌ Received move for different game:', { 
+          received: data.gameId, 
+          current: gameState.gameId 
+        })
         return
       }
       
       // Validate the move is from the expected opponent
       if (gameState.opponent?.wallet !== data.from) {
-        console.warn('Received move from unexpected player:', { received: data.from, expected: gameState.opponent?.wallet })
+        console.warn('❌ Received move from unexpected player:', { 
+          received: data.from, 
+          expected: gameState.opponent?.wallet 
+        })
         return
       }
+      
+      console.log('✅ Move validation passed, applying move:', data.move)
       
       setGameState(prev => {
         const newChess = new Chess(prev.chess.fen())
         try {
           const moveResult = newChess.move(data.move)
           console.log('✅ Applied opponent move:', moveResult.san)
+          console.log('🎯 New board position:', newChess.fen())
           
           return {
             ...prev,
@@ -581,20 +619,29 @@ function ChessPageContent() {
 
       // Send move to opponent if in multiplayer
       if (gameState.mode === 'multiplayer' && socketRef.current && gameState.opponent) {
-        console.log('📡 Sending move to opponent:', {
+        console.log('📡 Preparing to send move to opponent')
+        console.log('🎯 Socket connected:', socketRef.current.connected)
+        console.log('🎯 Game state:', {
           gameId: gameState.gameId,
-          move: actualMove.san,
-          opponent: gameState.opponent.wallet
+          opponentWallet: gameState.opponent.wallet,
+          currentTurn: gameState.chess.turn(),
+          playerColor: gameState.playerColor
         })
         
-        // Send direct move to opponent for lobby-based games
-        socketRef.current.emit('lobby-move', {
+        const moveData = {
           gameId: gameState.gameId,
           move: actualMove.san,
           from: publicKey?.toString(),
           to: gameState.opponent.wallet,
           fen: gameState.chess.fen()
-        })
+        }
+        
+        console.log('📡 Sending move to opponent:', moveData)
+        
+        // Send direct move to opponent for lobby-based games
+        socketRef.current.emit('lobby-move', moveData)
+        
+        console.log('✅ Move sent via lobby-move event')
       }
 
       // Check if game is over

@@ -291,30 +291,60 @@ io.on('connection', (socket) => {
     const { gameId, move, from, to, fen } = data
     const fromWallet = connectedUsers.get(socket.id)?.wallet
     
+    console.log(`🎯 Lobby move received:`, {
+      gameId,
+      move,
+      from,
+      to,
+      fromWallet,
+      socketId: socket.id,
+      connectedUsersCount: connectedUsers.size
+    })
+    
     if (!fromWallet || fromWallet !== from) {
+      console.error(`❌ Unauthorized move attempt:`, {
+        fromWallet,
+        expectedFrom: from,
+        socketId: socket.id
+      })
       socket.emit('error', 'Unauthorized move attempt')
       return
     }
     
-    console.log(`Lobby move from ${from} to ${to}: ${move}`)
+    console.log(`🔍 Looking for target user: ${to}`)
+    console.log(`📋 Connected users:`, Array.from(connectedUsers.values()).map(u => ({
+      wallet: u.wallet.slice(0, 8) + '...',
+      socketId: u.socketId
+    })))
     
-    // Find target user
-    const targetUser = Array.from(connectedUsers.values()).find(user => user.wallet === to)
+    // Find target user with exact wallet match
+    const targetUser = Array.from(connectedUsers.values()).find(user => {
+      const match = user.wallet === to
+      console.log(`🔎 Checking ${user.wallet.slice(0, 8)}... === ${to.slice(0, 8)}...: ${match}`)
+      return match
+    })
+    
     if (!targetUser) {
-      console.log(`Target user ${to} not found online`)
+      console.error(`❌ Target user ${to.slice(0, 8)}... not found online`)
+      console.log(`🔍 Available users:`, Array.from(connectedUsers.values()).map(u => u.wallet.slice(0, 8) + '...'))
       socket.emit('error', 'Opponent not online')
       return
     }
     
+    console.log(`✅ Target user found: ${targetUser.wallet.slice(0, 8)}... (socket: ${targetUser.socketId})`)
+    
     // Send move to opponent
-    io.to(targetUser.socketId).emit('lobby-move-received', {
+    const moveData = {
       gameId,
       move,
       from,
       fen
-    })
+    }
     
-    console.log(`Move ${move} sent to ${to}`)
+    console.log(`📡 Sending lobby-move-received to ${targetUser.socketId}:`, moveData)
+    io.to(targetUser.socketId).emit('lobby-move-received', moveData)
+    
+    console.log(`✅ Move ${move} sent from ${from.slice(0, 8)}... to ${to.slice(0, 8)}...`)
   })
   
   // Handle game end (resignation, draw offer, etc.)
@@ -348,7 +378,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const user = connectedUsers.get(socket.id)
     if (user) {
-      console.log(`User ${user.wallet} disconnected`)
+      console.log(`👋 User ${user.wallet.slice(0, 8)}...${user.wallet.slice(-4)} disconnected`)
       
       // Clean up any active challenges from this user
       activeChallenges.delete(user.wallet)
@@ -369,36 +399,81 @@ io.on('connection', (socket) => {
       }
       
       connectedUsers.delete(socket.id)
+      console.log(`📊 Remaining connected users: ${connectedUsers.size}`)
+    } else {
+      console.log(`❓ Unknown user disconnected: ${socket.id}`)
     }
   })
 })
 
 // Basic API endpoint for health check
 app.get('/health', (req, res) => {
+  const connectedUsersList = Array.from(connectedUsers.values()).map(user => ({
+    wallet: user.wallet.slice(0, 8) + '...' + user.wallet.slice(-4),
+    socketId: user.socketId
+  }))
+  
   res.json({
     status: 'ok',
+    timestamp: new Date().toISOString(),
     games: games.size,
     challenges: challenges.size,
     activeChallenges: activeChallenges.size,
-    users: connectedUsers.size
+    users: connectedUsers.size,
+    connectedUsers: connectedUsersList,
+    uptime: process.uptime()
+  })
+})
+
+// Debug endpoint for connected users
+app.get('/debug/users', (req, res) => {
+  const users = Array.from(connectedUsers.entries()).map(([socketId, user]) => ({
+    socketId,
+    wallet: user.wallet,
+    connected: io.sockets.sockets.has(socketId)
+  }))
+  
+  res.json({
+    total: connectedUsers.size,
+    users
   })
 })
 
 server.listen(PORT, () => {
-  console.log(`Chess WebSocket server running on port ${PORT}`)
-  console.log(`Health check available at http://localhost:${PORT}/health`)
-  console.log(`Environment: ${NODE_ENV}`)
-  console.log(`Allowed origins: ${allowedOrigins.join(', ')}`)
+  console.log(`🚀 Chess WebSocket server running on port ${PORT}`)
+  console.log(`🏥 Health check available at http://localhost:${PORT}/health`)
+  console.log(`🔧 Debug endpoint at http://localhost:${PORT}/debug/users`)
+  console.log(`🌍 Environment: ${NODE_ENV}`)
+  console.log(`🔗 Allowed origins: ${allowedOrigins.join(', ')}`)
+  console.log(`⏰ Server started at: ${new Date().toISOString()}`)
 })
 
-// Cleanup interval for expired challenges (remove after 5 minutes)
+// Enhanced cleanup interval for expired challenges and stale connections
 setInterval(() => {
   const now = Date.now()
+  
+  // Clean up expired challenges
   for (const [challengeId, challenge] of challenges.entries()) {
     if (now - challenge.timestamp > 5 * 60 * 1000) { // 5 minutes
       challenges.delete(challengeId)
-      activeChallenges.delete(challenge.from) // Clean up active challenge tracking
-      console.log(`Expired challenge ${challengeId} removed`)
+      activeChallenges.delete(challenge.from)
+      console.log(`🧹 Expired challenge ${challengeId} removed`)
     }
   }
+  
+  // Clean up stale user connections
+  let staleConnections = 0
+  for (const [socketId, user] of connectedUsers.entries()) {
+    if (!io.sockets.sockets.has(socketId)) {
+      connectedUsers.delete(socketId)
+      staleConnections++
+      console.log(`🧹 Removed stale connection for ${user.wallet.slice(0, 8)}...`)
+    }
+  }
+  
+  if (staleConnections > 0) {
+    console.log(`🧹 Cleaned up ${staleConnections} stale connections`)
+  }
+  
+  console.log(`📊 Server status: ${connectedUsers.size} users, ${games.size} games, ${challenges.size} challenges`)
 }, 60000) // Check every minute 
