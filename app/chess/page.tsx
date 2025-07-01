@@ -251,6 +251,7 @@ function ChessPageContent() {
       socket.on('challenge-accepted', handleChallengeAccepted)
       socket.on('challenge-declined', handleChallengeDeclined)
       socket.on('game-move', handleOpponentMove)
+      socket.on('lobby-move-received', handleLobbyMoveReceived)
       socket.on('game-end', handleGameEnd)
       socket.on('opponent-disconnected', handleOpponentDisconnected)
       socket.on('error', handleSocketError)
@@ -303,6 +304,9 @@ function ChessPageContent() {
       chess: new Chess()
     }))
     
+    // Also set currentGameId for consistency
+    setCurrentGameId(gameId)
+    
     toast({
       title: "Challenge Accepted!",
       description: `Game started! You are playing as ${color === 'w' ? 'White' : 'Black'}`,
@@ -333,6 +337,52 @@ function ChessPageContent() {
         return prev
       }
     })
+  }
+
+  const handleLobbyMoveReceived = async (data: { gameId: string; move: string; from: string; fen?: string }) => {
+    console.log('🎯 Received lobby move:', data)
+    
+    try {
+      // Validate this is for the current game
+      if (gameState.gameId !== data.gameId) {
+        console.warn('Received move for different game:', { received: data.gameId, current: gameState.gameId })
+        return
+      }
+      
+      // Validate the move is from the expected opponent
+      if (gameState.opponent?.wallet !== data.from) {
+        console.warn('Received move from unexpected player:', { received: data.from, expected: gameState.opponent?.wallet })
+        return
+      }
+      
+      setGameState(prev => {
+        const newChess = new Chess(prev.chess.fen())
+        try {
+          const moveResult = newChess.move(data.move)
+          console.log('✅ Applied opponent move:', moveResult.san)
+          
+          return {
+            ...prev,
+            chess: newChess,
+            gameHistory: [...prev.gameHistory, moveResult.san]
+          }
+        } catch (error) {
+          console.error('❌ Invalid lobby move received:', data.move, error)
+          return prev
+        }
+      })
+      
+      // Save the opponent's move to database
+      try {
+        await saveGameMove({ san: data.move, from: '', to: '', promotion: '' }, 1000)
+        console.log('✅ Opponent move saved to database')
+      } catch (error) {
+        console.error('❌ Failed to save opponent move:', error)
+      }
+      
+    } catch (error) {
+      console.error('❌ Error handling lobby move:', error)
+    }
   }
 
   const handleGameEnd = (winner: Color | 'draw', reason?: string) => {
@@ -530,10 +580,20 @@ function ChessPageContent() {
       }))
 
       // Send move to opponent if in multiplayer
-      if (gameState.mode === 'multiplayer' && socketRef.current) {
-        socketRef.current.emit('make-move', {
+      if (gameState.mode === 'multiplayer' && socketRef.current && gameState.opponent) {
+        console.log('📡 Sending move to opponent:', {
           gameId: gameState.gameId,
-          move: actualMove.san
+          move: actualMove.san,
+          opponent: gameState.opponent.wallet
+        })
+        
+        // Send direct move to opponent for lobby-based games
+        socketRef.current.emit('lobby-move', {
+          gameId: gameState.gameId,
+          move: actualMove.san,
+          from: publicKey?.toString(),
+          to: gameState.opponent.wallet,
+          fen: gameState.chess.fen()
         })
       }
 
@@ -1266,14 +1326,24 @@ function ChessPageContent() {
       if (data.success && data.hasStarted && data.gameData) {
         console.log('🎮 Lobby has transitioned to game:', data.gameData)
         
+        // Set both gameState.gameId AND currentGameId for consistency
         setGameState(prev => ({
           ...prev,
           mode: 'multiplayer',
           status: 'playing',
           gameId: data.gameData.id,
           playerColor: data.gameData.player_white === publicKey?.toString() ? 'w' : 'b',
+          opponent: {
+            wallet: data.gameData.player_white === publicKey?.toString() 
+              ? data.gameData.player_black_wallet 
+              : data.gameData.player_white_wallet
+          },
           chess: new Chess()
         }))
+        
+        // Sync the separate currentGameId state
+        setCurrentGameId(data.gameData.id)
+        console.log('🎯 Set currentGameId to:', data.gameData.id)
         
         setCurrentLobby(null)
         

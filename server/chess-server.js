@@ -241,7 +241,7 @@ io.on('connection', (socket) => {
     console.log(`Challenge ${challengeId} declined`)
   })
   
-  // Handle game moves
+  // Handle game moves (legacy challenge system)
   socket.on('make-move', (data) => {
     const { gameId, move } = data
     const game = games.get(gameId)
@@ -284,6 +284,37 @@ io.on('connection', (socket) => {
       games.delete(gameId)
       console.log(`Game ${gameId} ended. Winner: ${result.winner}`)
     }
+  })
+  
+  // Handle lobby-based game moves (new system)
+  socket.on('lobby-move', (data) => {
+    const { gameId, move, from, to, fen } = data
+    const fromWallet = connectedUsers.get(socket.id)?.wallet
+    
+    if (!fromWallet || fromWallet !== from) {
+      socket.emit('error', 'Unauthorized move attempt')
+      return
+    }
+    
+    console.log(`Lobby move from ${from} to ${to}: ${move}`)
+    
+    // Find target user
+    const targetUser = Array.from(connectedUsers.values()).find(user => user.wallet === to)
+    if (!targetUser) {
+      console.log(`Target user ${to} not found online`)
+      socket.emit('error', 'Opponent not online')
+      return
+    }
+    
+    // Send move to opponent
+    io.to(targetUser.socketId).emit('lobby-move-received', {
+      gameId,
+      move,
+      from,
+      fen
+    })
+    
+    console.log(`Move ${move} sent to ${to}`)
   })
   
   // Handle game end (resignation, draw offer, etc.)
