@@ -382,14 +382,46 @@ function ChessPageContent() {
     setGameState(prev => {
       const newChess = new Chess(prev.chess.fen())
       try {
-        newChess.move(move)
+        const moveResult = newChess.move(move)
+        console.log('✅ Successfully applied opponent move:', moveResult.san)
+        console.log('🎯 New board position FEN:', newChess.fen())
+        console.log('🔄 Game turn is now:', newChess.turn() === 'w' ? 'White' : 'Black')
+        
+        // Determine if the game has ended after this move
+        let updatedStatus: GameStatus = prev.status
+        let updatedWinner: Color | 'draw' | undefined = prev.winner
+
+        if (newChess.isGameOver()) {
+          updatedStatus = 'finished'
+          if (newChess.isCheckmate()) {
+            updatedWinner = newChess.turn() === 'w' ? 'b' : 'w'
+          } else {
+            updatedWinner = 'draw'
+          }
+
+          // Notify server so opponent also receives game-end
+          if (socketRef.current && gameState.gameId) {
+            socketRef.current.emit('end-game', {
+              gameId: gameState.gameId,
+              reason: newChess.isCheckmate() ? 'checkmate' : 'stalemate',
+              winner: updatedWinner === 'w' ? 'white' : updatedWinner === 'b' ? 'black' : 'draw'
+            })
+          }
+        }
+        
         return {
           ...prev,
           chess: newChess,
-          gameHistory: [...prev.gameHistory, move]
+          gameHistory: [...prev.gameHistory, moveResult.san],
+          status: updatedStatus,
+          winner: updatedWinner,
+          // If we haven't set our colour yet, it's the side to move now.
+          playerColor: prev.playerColor || (newChess.turn() as Color),
+          // Ensure opponent wallet is recorded.
+          opponent: prev.opponent
         }
       } catch (error) {
-        console.error('Invalid move received:', move, error)
+        console.error('❌ Invalid move received:', move, error)
         return prev
       }
     })
@@ -491,10 +523,34 @@ function ChessPageContent() {
           console.log('🎯 New board position FEN:', newChess.fen())
           console.log('🔄 Game turn is now:', newChess.turn() === 'w' ? 'White' : 'Black')
           
+          // Determine if the game has ended after this move
+          let updatedStatus: GameStatus = prev.status
+          let updatedWinner: Color | 'draw' | undefined = prev.winner
+
+          if (newChess.isGameOver()) {
+            updatedStatus = 'finished'
+            if (newChess.isCheckmate()) {
+              updatedWinner = newChess.turn() === 'w' ? 'b' : 'w'
+            } else {
+              updatedWinner = 'draw'
+            }
+
+            // Notify server so opponent also receives game-end
+            if (socketRef.current) {
+              socketRef.current.emit('end-game', {
+                gameId: data.gameId,
+                reason: newChess.isCheckmate() ? 'checkmate' : 'stalemate',
+                winner: updatedWinner === 'w' ? 'white' : updatedWinner === 'b' ? 'black' : 'draw'
+              })
+            }
+          }
+          
           return {
             ...prev,
             chess: newChess,
             gameHistory: [...prev.gameHistory, moveResult.san],
+            status: updatedStatus,
+            winner: updatedWinner,
             // If we haven't set our colour yet, it's the side to move now.
             playerColor: prev.playerColor || (newChess.turn() as Color),
             // Ensure opponent wallet is recorded.
@@ -761,6 +817,15 @@ function ChessPageContent() {
         let winner: Color | 'draw' = 'draw'
         if (gameState.chess.isCheckmate()) {
           winner = gameState.chess.turn() === 'w' ? 'b' : 'w'
+        }
+        
+        // 🚀 Notify the server (and therefore the opponent) that the game is finished
+        if (gameState.mode === 'multiplayer' && socketRef.current && gameState.gameId) {
+          socketRef.current.emit('end-game', {
+            gameId: gameState.gameId,
+            reason: gameState.chess.isCheckmate() ? 'checkmate' : 'stalemate',
+            winner: winner === 'w' ? 'white' : winner === 'b' ? 'black' : 'draw'
+          })
         }
         
         setGameState(prev => ({
