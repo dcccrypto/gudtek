@@ -419,14 +419,36 @@ function ChessPageContent() {
     }
     
     try {
-      // Validate this is for the current game
-      const effectiveGameId = gameState.gameId || currentGameId || null as any
+      // Determine our current game context. If none exists yet, bootstrap it from the
+      // incoming lobby-move (this can happen if the opponent moves *immediately* after the
+      // lobby transitions to a game and our periodic status check hasn't fired yet).
+      let effectiveGameId = gameState.gameId || currentGameId
+
+      if (!effectiveGameId) {
+        console.log('🆕 No active game detected – initialising from first lobby-move')
+
+        // Persist the game id locally so future validations succeed
+        setCurrentGameId(data.gameId)
+
+        setGameState(prev => ({
+          ...prev,
+          mode: 'multiplayer',
+          status: 'playing',
+          gameId: data.gameId,
+          // We don't yet know our colour; this will be set after we apply the move below.
+          opponent: { wallet: data.from }
+        }))
+
+        effectiveGameId = data.gameId
+      }
+
+      // If after the bootstrap we still have a mismatch, bail out.
       if (effectiveGameId !== data.gameId) {
-        console.warn('❌ Received move for different game:', { 
-          received: data.gameId, 
+        console.warn('❌ Received move for different game:', {
+          received: data.gameId,
           currentGameId: effectiveGameId,
           gameStateGameId: gameState.gameId,
-          currentGameIdState: currentGameId 
+          currentGameIdState: currentGameId
         })
         return
       }
@@ -467,7 +489,11 @@ function ChessPageContent() {
           return {
             ...prev,
             chess: newChess,
-            gameHistory: [...prev.gameHistory, moveResult.san]
+            gameHistory: [...prev.gameHistory, moveResult.san],
+            // If we haven't set our colour yet, it's the side to move now.
+            playerColor: prev.playerColor || (newChess.turn() as Color),
+            // Ensure opponent wallet is recorded.
+            opponent: prev.opponent || { wallet: data.from }
           }
         } catch (error) {
           console.error('❌ Invalid lobby move received:', data.move, error)
