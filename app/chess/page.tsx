@@ -422,14 +422,17 @@ function ChessPageContent() {
       // Determine our current game context. If none exists yet, bootstrap it from the
       // incoming lobby-move (this can happen if the opponent moves *immediately* after the
       // lobby transitions to a game and our periodic status check hasn't fired yet).
+      // Flag to indicate we bootstrap game context from incoming move
+      let isBootstrap = false
       let effectiveGameId = gameState.gameId || currentGameId
 
       if (!effectiveGameId) {
+        isBootstrap = true
         console.log('🆕 No active game detected – initialising from first lobby-move')
-
+        
         // Persist the game id locally so future validations succeed
         setCurrentGameId(data.gameId)
-
+        
         setGameState(prev => ({
           ...prev,
           mode: 'multiplayer',
@@ -438,10 +441,10 @@ function ChessPageContent() {
           // We don't yet know our colour; this will be set after we apply the move below.
           opponent: { wallet: data.from }
         }))
-
+        
         effectiveGameId = data.gameId
       }
-
+      
       // If after the bootstrap we still have a mismatch, bail out.
       if (effectiveGameId !== data.gameId) {
         console.warn('❌ Received move for different game:', {
@@ -452,26 +455,28 @@ function ChessPageContent() {
         })
         return
       }
-      
-      // Validate the move is from the expected opponent
-      if (gameState.opponent?.wallet !== data.from) {
-        console.warn('❌ Received move from unexpected player:', { 
-          received: data.from, 
-          expected: gameState.opponent?.wallet 
-        })
-        return
-      }
-      
-      // Check if we're in multiplayer mode
-      if (gameState.mode !== 'multiplayer') {
-        console.warn('❌ Received move but not in multiplayer mode:', gameState.mode)
-        return
-      }
-      
-      // Check if game is in playing status
-      if (gameState.status !== 'playing') {
-        console.warn('❌ Received move but game not in playing status:', gameState.status)
-        return
+      // If not bootstrap, validate move context; skip checks on first-time bootstrap
+      if (!isBootstrap) {
+        // Validate the move is from the expected opponent
+        if (gameState.opponent?.wallet && gameState.opponent.wallet !== data.from) {
+          console.warn('❌ Received move from unexpected player:', { 
+            received: data.from, 
+            expected: gameState.opponent?.wallet 
+          })
+          return
+        }
+        // Check if we're in multiplayer mode
+        if (gameState.mode !== 'multiplayer') {
+          console.warn('❌ Received move but not in multiplayer mode:', gameState.mode)
+          return
+        }
+        // Check if game is in playing status
+        if (gameState.status !== 'playing') {
+          console.warn('❌ Received move but game not in playing status:', gameState.status)
+          return
+        }
+      } else {
+        console.log('🔄 Skipped opponent/mode/status checks during bootstrap')
       }
       
       console.log('✅ All validations passed, applying move:', data.move)
