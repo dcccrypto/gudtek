@@ -598,7 +598,7 @@ function ChessPageContent() {
       status: 'finished',
       winner
     }))
-
+    
     // Craft a user-centric message – winner / loser / draw
     const myColor = gameState.playerColor
     let description: string
@@ -613,7 +613,7 @@ function ChessPageContent() {
     }
 
     if (reason) description += ` (${reason})`
-
+    
     toast({
       title: 'Game Over',
       description

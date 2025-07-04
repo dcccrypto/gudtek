@@ -197,8 +197,8 @@ export default function HackathonLeaderboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
-      {/* Animated Background Grid */}
-      <div className="fixed inset-0 opacity-10" aria-hidden="true">
+      {/* Subtle animated background grid */}
+      <div className="fixed inset-0 opacity-5" aria-hidden="true">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
       </div>
 
@@ -213,14 +213,14 @@ export default function HackathonLeaderboard() {
           <img
             src="/artwork/mascot1.png"
             alt="Gud Tek Mascot Decorative"
-            className="hidden sm:block absolute top-20 left-4 sm:w-64 md:w-80 opacity-80 rotate-[-10deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+            className="hidden sm:block absolute top-20 left-4 sm:w-64 md:w-80 opacity-60 rotate-[-10deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
             aria-hidden="true"
           />
           {/* Decorative mascot image 2 */}
           <img
             src="/artwork/mascot2.png"
             alt="Gud Tek Mascot Decorative 2"
-            className="hidden sm:block absolute top-24 right-4 sm:w-64 md:w-80 opacity-80 rotate-[8deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+            className="hidden sm:block absolute top-24 right-4 sm:w-64 md:w-80 opacity-60 rotate-[8deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
             aria-hidden="true"
           />
           
@@ -230,18 +230,6 @@ export default function HackathonLeaderboard() {
             transition={{ duration: 0.8 }}
             className="relative z-20 max-w-4xl mx-auto"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-6"
-            >
-              <div className="inline-flex items-center gap-2 bg-blue-600/90 px-4 py-2 rounded-full shadow-md text-white text-xs font-bold">
-                <Trophy className="w-4 h-4" />
-                25% of prizes shared across top 100 eligible holders (LP excluded)
-              </div>
-            </motion.div>
-
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -252,26 +240,20 @@ export default function HackathonLeaderboard() {
               🏆 HACKATHON LEADERBOARD
             </motion.h1>
 
-            {/* Subheading */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-lg md:text-xl font-semibold text-gray-800 mb-6 max-w-2xl mx-auto"
-            >
-              Track the richest GUDTEK wallets and see who qualifies for proportional hackathon rewards.
-            </motion.p>
-
             {/* Disclaimer */}
-            <p className="text-xs italic text-gray-700 max-w-xl mx-auto mb-10 bg-yellow-100/60 border border-yellow-300 px-4 py-2 rounded-lg">
-              *Holders snapshot will be taken at a random time up to 48&nbsp;hours after hackathon funds are received in the project wallet.
-            </p>
+            <div className="max-w-2xl mx-auto mt-6">
+              <Alert className="bg-yellow-100/60 border-yellow-300 text-yellow-900">
+                <AlertDescription className="text-sm italic font-medium">
+                  *Holders snapshot will be taken at a random time up to 48&nbsp;hours after hackathon funds are received in the project wallet.
+                </AlertDescription>
+              </Alert>
+            </div>
 
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.7 }}
-              className="text-xl md:text-2xl font-bold text-gray-800 mb-12 max-w-3xl mx-auto hidden"
+              className="text-xl md:text-2xl font-bold text-gray-800 mb-12 max-w-3xl mx-auto"
             >
               Top 100 eligible GUDTEK holders share 25% of total hackathon prize pools proportional to their holdings (liquidity pool excluded)
             </motion.p>
