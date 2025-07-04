@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       lobby,
-      inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/chess?lobby=${lobby.lobby_code}`
+      inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://gudtek.club'}/chess?lobby=${lobby.lobby_code}`
     })
   } catch (error: any) {
     console.error('Error creating lobby:', error)

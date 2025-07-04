@@ -12,7 +12,7 @@ const server = http.createServer(app)
 // Environment variables with defaults
 const PORT = process.env.PORT || 3001
 const NODE_ENV = process.env.NODE_ENV || 'development'
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://gudtek.club'
 const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD || 'https://gudtek-82ta.vercel.app'
 
 // Configure allowed origins based on environment

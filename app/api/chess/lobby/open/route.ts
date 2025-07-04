@@ -7,7 +7,7 @@ export const revalidate = 0
 export async function GET(request: NextRequest) {
   try {
     // Use URL constructor with a base URL to avoid dynamic server usage
-    const url = new URL(request.url || '', 'http://localhost')
+    const url = new URL(request.url || '', 'https://gudtek.club')
     const limit = parseInt(url.searchParams.get('limit') || '10')
 
     const lobbies = await getOpenLobbies(limit)
