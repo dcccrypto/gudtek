@@ -19,7 +19,6 @@ export default function Navbar() {
   const navItems: NavItem[] = [
     { name: "Home", href: "/" },
     { name: "Games", href: "/games" },
-    { name: "Hackathon", href: "/hackathon" },
     { name: "Memes", href: "/memes" },
     { name: "GudMusic", href: "/music" },
     { name: "GUD AI", href: "/pfp" }
