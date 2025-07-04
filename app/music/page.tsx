@@ -59,6 +59,14 @@ const tracks: Track[] = [
     cover: "/Gudmusic/tekisgud.jpg",
     duration: "2:43",
     description: "Simple truth: TEK IS GUD"
+  },
+  {
+    id: 6,
+    title: "We Say Gudtek",
+    filename: "wesaygudtek.mp3",
+    cover: "/Gudmusic/wesaygudtek.png",
+    duration: "2:55",
+    description: "The crowd anthem shouting WE SAY GUDTEK!"
   }
 ]
 
