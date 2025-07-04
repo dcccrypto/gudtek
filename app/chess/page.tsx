@@ -1667,7 +1667,7 @@ function ChessPageContent() {
             ...prev,
             playerTime: updatedTimes,
             status: 'finished',
-            winner: sideToMove === 'white' ? 'black' : 'white'
+            winner: sideToMove === 'white' ? 'b' : 'w'
           }
         }
 
