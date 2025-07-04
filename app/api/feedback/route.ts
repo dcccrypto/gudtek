@@ -8,44 +8,19 @@ import {
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { name, email, subject, message } = await request.json()
+    const { name, email, subject, message } = await req.json()
 
-    // Basic validation
     if (!name || !email || !subject || !message) {
-      return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email address' },
-        { status: 400 }
-      )
-    }
-
-    const feedback = await createFeedback({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      subject: subject.trim(),
-      message: message.trim()
-    })
-
-    return NextResponse.json(
-      { message: 'Feedback submitted successfully!', feedback },
-      { status: 201 }
-    )
+    await createFeedback({ name, email, subject, message })
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error submitting feedback:', error)
-    return NextResponse.json(
-      { error: 'Failed to submit feedback' },
-      { status: 500 }
-    )
+    console.error('[FEEDBACK_POST]', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

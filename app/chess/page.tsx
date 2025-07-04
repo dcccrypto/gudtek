@@ -747,7 +747,17 @@ function ChessPageContent() {
     try {
       // Create a copy of the current chess state to test the move
       const testChess = new Chess(gameState.chess.fen())
-      const move = testChess.move({ from, to, promotion: 'q' })
+      // Detect promotion
+      let promotionPiece: 'q' | 'r' | 'b' | 'n' = 'q'
+      const movingPiece = testChess.get(from as any)
+      if (movingPiece?.type === 'p' && (to.endsWith('8') || to.endsWith('1'))) {
+        const choice = typeof window !== 'undefined' ? window.prompt('Promote to (q, r, b, n):', 'q') : 'q'
+        if (choice && ['q', 'r', 'b', 'n'].includes(choice.toLowerCase())) {
+          promotionPiece = choice.toLowerCase() as 'q' | 'r' | 'b' | 'n'
+        }
+      }
+
+      const move = testChess.move({ from, to, promotion: promotionPiece })
       
       if (!move) {
         console.log('Invalid move attempted:', { from, to })
@@ -780,16 +790,20 @@ function ChessPageContent() {
         return false
       }
 
-      // Move is valid, apply it to the actual game state
-      const actualMove = gameState.chess.move({ from, to, promotion: 'q' })
+      // Apply to real chess instance
+      const actualMove = gameState.chess.move({ from, to, promotion: promotionPiece })
       if (!actualMove) {
         console.error('Move validation inconsistency')
         return false
       }
+      // Update clocks: give increment to the player who just moved
+      const moverColor: 'white' | 'black' = actualMove.color === 'w' ? 'white' : 'black'
+      const updatedPlayerTime = { ...gameState.playerTime }
+      updatedPlayerTime[moverColor] = updatedPlayerTime[moverColor] + gameState.timeControl.increment
 
       // Save move to database
       try {
-        await saveGameMove(actualMove, 1000) // Default 1 second for now
+        await saveGameMove(actualMove, 1000)
         console.log('✅ Move saved to database:', actualMove.san)
       } catch (error) {
         console.error('❌ Failed to save move to database:', error)
@@ -798,8 +812,10 @@ function ChessPageContent() {
       // Update the game state with the new position
       setGameState(prev => ({
         ...prev,
-        chess: prev.chess, // Keep the same chess instance (already updated)
-        gameHistory: [...prev.gameHistory, actualMove.san]
+        chess: prev.chess,
+        gameHistory: [...prev.gameHistory, actualMove.san],
+        playerTime: updatedPlayerTime,
+        lastMoveTime: Date.now()
       }))
 
       // Send move to opponent if in multiplayer
@@ -915,7 +931,14 @@ function ChessPageContent() {
           setGameState(prev => ({
             ...prev,
             chess: prev.chess, // Keep the same chess instance (already updated)
-            gameHistory: [...prev.gameHistory, move.san]
+            gameHistory: [...prev.gameHistory, move.san],
+            // Add increment for AI move
+            playerTime: {
+              ...prev.playerTime,
+              black: prev.playerColor === 'w' ? prev.playerTime.black + prev.timeControl.increment : prev.playerTime.black,
+              white: prev.playerColor === 'b' ? prev.playerTime.white + prev.timeControl.increment : prev.playerTime.white
+            },
+            lastMoveTime: Date.now()
           }))
           
           // Check for game end using the current chess instance
@@ -1613,6 +1636,53 @@ function ChessPageContent() {
     }
   }
 
+  // Real-time chess clock: decrement the active player's remaining time each second
+  useEffect(() => {
+    // Start only while game is actively being played
+    if (gameState.status !== 'playing') {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+      return
+    }
+
+    // Reset any previous interval
+    if (timerRef.current) clearInterval(timerRef.current)
+
+    timerRef.current = setInterval(() => {
+      setGameState(prev => {
+        if (prev.status !== 'playing') return prev
+        const sideToMove: 'white' | 'black' = prev.chess.turn() === 'w' ? 'white' : 'black'
+        const remaining = Math.max(0, prev.playerTime[sideToMove] - 1)
+        const updatedTimes = { ...prev.playerTime, [sideToMove]: remaining }
+
+        if (remaining === 0) {
+          // Flag-fall
+          toast({
+            title: 'Time Out',
+            description: `${sideToMove === 'white' ? 'White' : 'Black'} flagged – game over.`
+          })
+          return {
+            ...prev,
+            playerTime: updatedTimes,
+            status: 'finished',
+            winner: sideToMove === 'white' ? 'black' : 'white'
+          }
+        }
+
+        return { ...prev, playerTime: updatedTimes }
+      })
+    }, 1000)
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [gameState.status, gameState.chess.turn()])
+
   if (!mounted) return null
 
   const canPlay = connected && publicKey && walletInfo.canPlay
@@ -1944,6 +2014,18 @@ function ChessPageContent() {
                               <span className="text-gray-700 dark:text-gray-200">You:</span>
                               <Badge>
                                 {gameState.playerColor === 'w' ? 'White' : 'Black'}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-700 dark:text-gray-200">Your Time:</span>
+                              <Badge>
+                                {formatTime(gameState.playerColor === 'w' ? gameState.playerTime.white : gameState.playerTime.black)}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-700 dark:text-gray-200">AI Time:</span>
+                              <Badge variant="secondary">
+                                {formatTime(gameState.playerColor === 'w' ? gameState.playerTime.black : gameState.playerTime.white)}
                               </Badge>
                             </div>
                             {gameState.chess.isGameOver() && (
@@ -2420,7 +2502,7 @@ function ChessPageContent() {
                       <div className="lg:col-span-2">
                         <Card className="backdrop-blur-lg bg-white/10 border border-white/20 shadow-2xl">
                           <CardContent className="p-6">
-                            <div className="aspect-square max-w-[600px] mx-auto">
+                            <div className="aspect-square max-w-[600px] mx-auto relative">
                               <Chessboard
                                 position={gameState.chess.fen()}
                                 onSquareClick={onSquareClick}
