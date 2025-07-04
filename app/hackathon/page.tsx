@@ -192,6 +192,9 @@ export default function HackathonLeaderboard() {
     return <Badge variant="outline">#{rank}</Badge>
   }
 
+  // Exclude the top two wallets (often LP or team wallets) from the public leaderboard display
+  const displayedHolders = leaderboardData?.top_100.filter(h => h.rank > 2) || []
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
       {/* Animated Background Grid */}
@@ -228,21 +231,14 @@ export default function HackathonLeaderboard() {
             className="relative z-20 max-w-4xl mx-auto"
           >
             <motion.div
-              initial={{ scale: 0, rotate: 180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-              className="mb-4 mt-4"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mb-6"
             >
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 border-2 border-yellow-400 rounded-xl p-3 shadow-xl max-w-md mx-auto">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <Trophy className="w-4 h-4 text-purple-800" />
-                  </div>
-                  <span className="text-sm font-black text-yellow-300">HACKATHON PRIZE DISTRIBUTION</span>
-                </div>
-                <p className="text-xs font-medium text-blue-100 text-center">
-                  Top 100 eligible GUDTEK holders • 25% prize sharing • Proportionate to holdings • LP excluded
-                </p>
+              <div className="inline-flex items-center gap-2 bg-blue-600/90 px-4 py-2 rounded-full shadow-md text-white text-xs font-bold">
+                <Trophy className="w-4 h-4" />
+                25% of prizes shared across top 100 eligible holders (LP excluded)
               </div>
             </motion.div>
 
@@ -250,17 +246,32 @@ export default function HackathonLeaderboard() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="text-5xl md:text-7xl font-black text-gray-900 mb-4 tracking-tight"
+              className="text-5xl md:text-7xl font-black text-gray-900 mb-6 tracking-tight"
               style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}
             >
               🏆 HACKATHON LEADERBOARD
             </motion.h1>
 
+            {/* Subheading */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-lg md:text-xl font-semibold text-gray-800 mb-6 max-w-2xl mx-auto"
+            >
+              Track the richest GUDTEK wallets and see who qualifies for proportional hackathon rewards.
+            </motion.p>
+
+            {/* Disclaimer */}
+            <p className="text-xs italic text-gray-700 max-w-xl mx-auto mb-10 bg-yellow-100/60 border border-yellow-300 px-4 py-2 rounded-lg">
+              *Holders snapshot will be taken at a random time up to 48&nbsp;hours after hackathon funds are received in the project wallet.
+            </p>
+
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.7 }}
-              className="text-xl md:text-2xl font-bold text-gray-800 mb-8 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl font-bold text-gray-800 mb-12 max-w-3xl mx-auto hidden"
             >
               Top 100 eligible GUDTEK holders share 25% of total hackathon prize pools proportional to their holdings (liquidity pool excluded)
             </motion.p>
@@ -448,7 +459,7 @@ export default function HackathonLeaderboard() {
                       </TableRow>
                     </TableHeader>
                   <TableBody>
-                    {leaderboardData.top_100.map((holder) => (
+                    {displayedHolders.map((holder, idx) => (
                       <TableRow 
                         key={holder.address}
                         className={`
@@ -460,7 +471,7 @@ export default function HackathonLeaderboard() {
                       >
                         <TableCell className="font-bold text-sm">
                           <div className="flex items-center gap-2">
-                            {getRankIcon(holder.rank)}
+                            {getRankIcon(holder.rank - 2)}
                           </div>
                         </TableCell>
                         

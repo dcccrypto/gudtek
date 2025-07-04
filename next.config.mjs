@@ -111,6 +111,19 @@ const nextConfig = {
       },
     ]
   },
+
+  productionBrowserSourceMaps: false,
+
+  webpack(cfg) {
+    if (!cfg.dev) {
+      cfg.optimization.minimizer.push(
+        new (require('terser-webpack-plugin'))({
+          terserOptions: { compress: { drop_console: true } }
+        })
+      )
+    }
+    return cfg
+  }
 }
 
 export default withBundleAnalyzer(nextConfig)

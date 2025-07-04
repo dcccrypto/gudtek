@@ -34,6 +34,7 @@ import {
   X // Added missing icon
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import SiteFooter from '@/components/SiteFooter'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
@@ -2819,6 +2820,9 @@ Can you beat my score? Play now with $GUDTEK tokens! 🚀
           </div>
         </div>
       </div>
+
+      {/* Global footer */}
+      <SiteFooter />
     </div>
   )
 } 
