@@ -592,20 +592,37 @@ function ChessPageContent() {
   }
 
   const handleGameEnd = (winner: Color | 'draw', reason?: string) => {
+    // Update local state first
     setGameState(prev => ({
       ...prev,
       status: 'finished',
       winner
     }))
-    
-    const message = winner === 'draw' 
-      ? 'Game ended in a draw!' 
-      : `${winner === 'w' ? 'White' : 'Black'} wins!`
-    
+
+    // Craft a user-centric message – winner / loser / draw
+    const myColor = gameState.playerColor
+    let description: string
+
+    if (winner === 'draw') {
+      description = 'Game ended in a draw!'
+    } else if (myColor) {
+      const winnerColor = winner === 'w' ? 'white' : 'black'
+      description = winnerColor === (myColor === 'w' ? 'white' : 'black') ? 'You won!' : 'You lost!'
+    } else {
+      description = `${winner === 'w' ? 'White' : 'Black'} wins!`
+    }
+
+    if (reason) description += ` (${reason})`
+
     toast({
-      title: "Game Over",
-      description: message + (reason ? ` (${reason})` : ''),
+      title: 'Game Over',
+      description
     })
+
+    // Automatically reset back to menu after a short delay
+    setTimeout(() => {
+      resetGame()
+    }, 5000)
   }
 
   const handleOpponentDisconnected = () => {
