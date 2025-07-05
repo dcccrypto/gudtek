@@ -13,13 +13,7 @@ export default function UtilityHubPage() {
       name: 'Wallet Cleaner',
       href: '/utility/clean-wallet',
       description: 'Close empty token accounts & reclaim SOL rent.',
-      img: '/images/placeholder-logo.png'
-    },
-    {
-      name: 'Token Stats',
-      href: '/utility/token-stats',
-      description: 'Live $GUDTEK price, volume & market cap.',
-      img: '/images/placeholder-logo.png'
+      img: '/utility/walletcleaner.png'
     }
   ]
 
@@ -54,13 +48,17 @@ export default function UtilityHubPage() {
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col items-center justify-center py-8">
-                <Image
-                  src={util.img}
-                  alt={util.name}
-                  width={140}
-                  height={140}
-                  className="object-contain drop-shadow-lg"
-                />
+                {util.img ? (
+                  <Image
+                    src={util.img}
+                    alt={util.name}
+                    width={140}
+                    height={140}
+                    className="object-contain drop-shadow-lg"
+                  />
+                ) : (
+                  <div className="h-[140px]" />
+                )}
               </CardContent>
 
               <div className="p-4 pt-0">

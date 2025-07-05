@@ -13,7 +13,7 @@ export default function GamesPage() {
       name: "Chess",
       href: "/chess",
       description: "Play real-time Gud Tek chess against other holders.",
-      img: "/images/gudtek-logo.png" // placeholder
+      img: "/artwork/chess.png" // updated icon
     },
     {
       name: "Token Dodge",
