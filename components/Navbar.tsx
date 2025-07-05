@@ -22,6 +22,7 @@ export default function Navbar() {
     { name: "Memes", href: "/memes" },
     { name: "GudMusic", href: "/music" },
     { name: "GUD AI", href: "/pfp" },
+    { name: "Hackathon", href: "/hackathon" },
     { name: "Utility", href: "/utility" }
   ]
   
