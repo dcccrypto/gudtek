@@ -21,7 +21,8 @@ export default function Navbar() {
     { name: "Games", href: "/games" },
     { name: "Memes", href: "/memes" },
     { name: "GudMusic", href: "/music" },
-    { name: "GUD AI", href: "/pfp" }
+    { name: "GUD AI", href: "/pfp" },
+    { name: "Utility", href: "/utility" }
   ]
   
   // Close mobile menu when route changes
