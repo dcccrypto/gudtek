@@ -22,7 +22,6 @@ export default function Navbar() {
     { name: "Memes", href: "/memes" },
     { name: "GudMusic", href: "/music" },
     { name: "GUD AI", href: "/pfp" },
-    { name: "Tokenomics", href: "/tokenomics" },
     { name: "Hackathon", href: "/hackathon" },
     { name: "Solana Guide", href: "/solana-memecoins" },
     { name: "Utility", href: "/utility" }
