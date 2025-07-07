@@ -37,9 +37,9 @@ export default function GudTekLanding() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Gud Tek",
-    "description": "First ever BONK hackathon project and #1 winner on hackathon.letsbonk.fun - Revolutionary hackathon-powered BONK tech on Solana",
-    "url": "https://gudtek.com",
-    "logo": "https://gudtek.com/images/gudtek-logo.png",
+    "description": "First project on BONK hackathon launchpad - Premium Solana memecoin with revolutionary tech and gaming utilities",
+    "url": "https://gudtek.club",
+    "logo": "https://gudtek.club/images/gudtek-logo.png",
     "sameAs": [
       "https://x.com/ccpp911/status/1930987147504259243",
       "https://x.com/i/communities/1930994127895703976",
@@ -47,8 +47,8 @@ export default function GudTekLanding() {
     ],
     "foundingDate": "2025",
     "industry": "Cryptocurrency",
-    "keywords": "BONK, Solana, cryptocurrency, meme coin, hackathon, blockchain, DeFi, hackathon winner",
-    "award": "First BONK Hackathon Winner - #1 on hackathon.letsbonk.fun"
+    "keywords": "BONK, Solana, cryptocurrency, meme coin, hackathon, blockchain, DeFi, solana memecoin, good tech",
+    "about": "Premium Solana memecoin featured as first project on BONK hackathon launchpad with innovative gaming and DeFi utilities"
   }
 
   const navItems = [
@@ -172,8 +172,8 @@ export default function GudTekLanding() {
               transition={{ duration: 0.8, delay: 0.8 }}
               className="text-xl md:text-2xl font-bold text-gray-800 mb-12 max-w-2xl mx-auto leading-relaxed"
             >
-              First ever BONK hackathon project<br />
-              <span className="text-lg text-gray-700">Revolutionary hackathon-powered tech on Solana</span>
+              First project on BONK hackathon launchpad<br />
+              <span className="text-lg text-gray-700">Revolutionary Solana memecoin with premium tech</span>
             </motion.p>
 
             {/* Primary Action - Single Strong CTA */}

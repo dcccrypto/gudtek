@@ -16,17 +16,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://gudtek.club'),
   title: {
-    default: 'GUD TEK | Premium Solana Memecoin | $GUDTEK Token',
-    template: '%s | GUD TEK - Solana Memecoin'
+    default: 'GUD TEK | Solana Memecoin BONK Hackathon | Premium Tech $GUDTEK',
+    template: '%s | GUD TEK - Solana BONK Memecoin'
   },
-  description: 'GUD TEK ($GUDTEK) - The premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump with GUDTEK.',
+  description: 'GUD TEK ($GUDTEK) - First project on BONK hackathon launchpad. Premium Solana memecoin with good tech, Token Dodge game, and strong community. Join the Solana memecoin revolution.',
   keywords: [
     'gudtek', 'solana', 'memecoin', 'solana memecoin', 'bonk', 'hackathon', 
+    'bonk hackathon', 'solana hackathon', 'good tech', 'premium tech',
     '$gudtek', 'solana token', 'crypto', 'defi', 'web3', 'blockchain',
     'solana ecosystem', 'meme token', 'crypto gaming', 'token dodge',
     'solana gaming', 'crypto community', 'memecoin pump', 'solana pump',
     'crypto investment', 'solana trading', 'meme coins', 'altcoin',
-    'cryptocurrency', 'digital assets', 'solana network', 'spl token'
+    'cryptocurrency', 'digital assets', 'solana network', 'spl token',
+    'bonk memecoin', 'solana memecoins', 'hackathon launchpad', 'launchpad'
   ],
   authors: [{ name: 'GUD TEK Team' }],
   creator: 'GUD TEK',
@@ -47,14 +49,14 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://gudtek.club',
     siteName: 'GUD TEK',
-    title: 'GUD TEK | Premium Solana Memecoin | $GUDTEK Token',
-    description: 'The premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump with GUDTEK.',
+    title: 'GUD TEK | First BONK Hackathon Launchpad Project | Premium Solana Memecoin',
+    description: 'First project on BONK hackathon launchpad. Premium Solana memecoin with good tech, gaming utilities, and strong community. $GUDTEK token.',
     images: [
       {
         url: '/images/gudtek-og.png',
         width: 1200,
         height: 630,
-        alt: 'GUD TEK - Premium Solana Memecoin',
+        alt: 'GUD TEK - BONK Hackathon Launchpad Solana Memecoin',
         type: 'image/png',
       }
     ],
@@ -63,8 +65,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@gudtek_official',
     creator: '@gudtek_official',
-    title: 'GUD TEK | Premium Solana Memecoin | $GUDTEK Token',
-    description: 'The premium Solana memecoin for crypto enthusiasts. Play Token Dodge, join the community, and ride the next big Solana pump.',
+    title: 'GUD TEK | BONK Hackathon Launchpad | Solana Memecoin',
+    description: 'First project on BONK hackathon launchpad. Premium Solana memecoin with good tech and gaming utilities.',
     images: ['/images/gudtek-og.png'],
   },
   alternates: {
@@ -169,6 +171,23 @@ export default function RootLayout({
         />
       </head>
       <body>
+        {/* Google Tag Manager */}
+        <script dangerouslySetInnerHTML={{
+          __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-P9THL8PF');`
+        }} />
+        {/* End Google Tag Manager */}
+        
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P9THL8PF"
+            height="0" width="0" style={{display:'none',visibility:'hidden'}}></iframe>
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
+        
         <Providers>{children}</Providers>
         <Toaster />
       </body>

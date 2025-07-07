@@ -10,7 +10,17 @@ const faqs = [
   {
     id: 'what-is-gudtek',
     question: 'What is Gud Tek?',
-    answer: 'Gud Tek is the #1 winner of the first BONK hackathon on Solana. We\'re a community-driven project that combines gaming with DeFi, featuring our Token Dodge game and $GUDTEK token.'
+    answer: 'Gud Tek is the first project launched on the BONK hackathon launchpad. We\'re a premium Solana memecoin with good tech that combines gaming with DeFi, featuring our Token Dodge game and $GUDTEK token.'
+  },
+  {
+    id: 'bonk-hackathon-project',
+    question: 'What is the BONK hackathon connection?',
+    answer: 'GUD TEK is the first project featured on the BONK hackathon launchpad at hackathon.letsbonk.fun. We\'re part of the Solana ecosystem working with BONK to bring innovative memecoin technology to the community.'
+  },
+  {
+    id: 'solana-memecoin-tech',
+    question: 'What makes GUD TEK different from other Solana memecoins?',
+    answer: 'GUD TEK combines premium technology with memecoin culture. We offer gaming utilities, DeFi features, community governance, and real utility beyond just being a meme token on Solana.'
   },
   {
     id: 'how-to-play-game',
