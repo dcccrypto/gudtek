@@ -23,7 +23,6 @@ export default function Navbar() {
     { name: "GudMusic", href: "/music" },
     { name: "GUD AI", href: "/pfp" },
     { name: "Hackathon", href: "/hackathon" },
-    { name: "Solana Guide", href: "/solana-memecoins" },
     { name: "Utility", href: "/utility" }
   ]
   
