@@ -10,6 +10,7 @@ import Link from "next/link"
 import TokenStats from "@/components/TokenStats"
 import SEOFAQSection from "@/components/SEOFAQSection"
 import FeedbackForm from "@/components/FeedbackForm"
+import CompactTokenomics from "@/components/CompactTokenomics"
 
 
 export default function GudTekLanding() {
@@ -272,136 +273,8 @@ export default function GudTekLanding() {
           </motion.div>
         </section>
 
-        {/* Tokenomics Section */}
-        <section className="py-20 px-4 bg-gradient-to-br from-orange-300/50 to-yellow-300/50 backdrop-filter backdrop-blur-sm relative" id="tokenomics">
-          {/* Decorative mascot image 4 */}
-          <img
-            src="/artwork/mascot4.png"
-            alt="Gud Tek Mascot Decorative 4"
-            className="hidden sm:block absolute bottom-6 right-6 sm:w-64 md:w-80 opacity-80 rotate-[5deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
-            aria-hidden="true"
-          />
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-5xl md:text-6xl font-black text-gray-900 mb-6">
-                <DollarSign className="inline-block mr-4" aria-hidden="true" />
-                Gud Tek Tokenomics
-              </h2>
-              <p className="text-xl text-gray-800 max-w-3xl mx-auto">
-                Transparent, secure, and community-focused tokenomics designed for long-term sustainability and growth
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              {/* Total Supply */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                viewport={{ once: true }}
-                className="bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl p-6 text-center shadow-xl border-2 border-orange-300"
-              >
-                <Target className="w-12 h-12 mx-auto mb-4 text-white" />
-                <h3 className="text-2xl font-black text-white mb-2">Total Supply</h3>
-                <p className="text-4xl font-black text-white">1B</p>
-                <p className="text-orange-100 mt-2">Fixed Supply</p>
-              </motion.div>
-
-              {/* LP Burned */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl p-6 text-center shadow-xl border-2 border-yellow-300"
-              >
-                <Flame className="w-12 h-12 mx-auto mb-4 text-white" />
-                <h3 className="text-2xl font-black text-white mb-2">LP Status</h3>
-                <p className="text-3xl font-black text-white">100% BURNED</p>
-                <p className="text-yellow-100 mt-2">Permanently Locked</p>
-              </motion.div>
-
-              {/* Dev Tokens */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                viewport={{ once: true }}
-                className="bg-gradient-to-br from-orange-600 to-yellow-600 rounded-2xl p-6 text-center shadow-xl border-2 border-orange-300"
-              >
-                <Lock className="w-12 h-12 mx-auto mb-4 text-white" />
-                <h3 className="text-2xl font-black text-white mb-2">Dev Tokens</h3>
-                <p className="text-3xl font-black text-white">LOCKED</p>
-                <p className="text-orange-100 mt-2">Team Commitment</p>
-              </motion.div>
-            </div>
-
-            {/* Tokenomics Details */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="bg-white/20 backdrop-filter backdrop-blur-lg rounded-3xl p-8 shadow-2xl border-2 border-orange-400/50"
-            >
-              <h3 className="text-3xl font-black text-gray-900 mb-6 text-center">Why Gud Tek Tokenomics Are Superior</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Liquidity Pool Burned</h4>
-                      <p className="text-gray-800">100% of LP tokens permanently destroyed, ensuring no rug pull possibility</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Dev Tokens Secured</h4>
-                      <p className="text-gray-800">All developer allocations locked, demonstrating long-term commitment</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Fixed Supply Model</h4>
-                      <p className="text-gray-800">1 billion token cap with no inflation or additional minting</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Community-Owned</h4>
-                      <p className="text-gray-800">Fair launch with community holding majority of supply</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Solana Efficiency</h4>
-                      <p className="text-gray-800">Built on Solana for fast, low-cost transactions</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900">Transparent Ecosystem</h4>
-                      <p className="text-gray-800">All transactions and tokenomics publicly verifiable on-chain</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </section>
+        {/* Compact Tokenomics Section */}
+        <CompactTokenomics />
 
         {/* How to Buy Section */}
         <section className="py-20 px-4 bg-gradient-to-br from-orange-500 to-yellow-500 relative" id="how-to-buy">

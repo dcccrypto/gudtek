@@ -1,15 +1,11 @@
-// Team wallet addresses with deduplication
+// Team wallet addresses with deduplication (removed wallets 5, 6, 7)
 const RAW_TEAM_WALLETS = [
-  'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q',
-  '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF',
-  'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK',
-  'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif',
-  'CVvJnDPcWdmUJN6YC4cHwBS2cJ9T8KoVh3xEwGquHYz1',
-  'uKE7LbZtV3JTKw3958un754jnD9rsZQKoEHxn32bM1i',
-  '2SyCvqbXdJBu1gB1bwATJwntgzXzEmfQTGu2tGroBTzf',
-  'CVvJnDPcWdmUJN6YC4cHwBS2cJ9T8KoVh3xEwGquHYz1', // Duplicate
-  'kHERC1oef4TYVvvfzapN6u9HKgkvp8tKKeAqVyFiCPL',
-  '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'
+  'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q', // Wallet 1
+  '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF', // Wallet 2
+  'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK', // Wallet 3
+  'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif', // Wallet 4
+  'kHERC1oef4TYVvvfzapN6u9HKgkvp8tKKeAqVyFiCPL', // Wallet 8
+  '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'  // Wallet 9
 ]
 
 /**
@@ -38,7 +34,7 @@ export const TOKENOMICS_CONSTANTS = {
     START_THRESHOLD: 100_000, // $100K
     END_THRESHOLD: 1_000_000,  // $1M
     INCREMENT: 100_000,        // $100K increments
-    BURN_PERCENTAGE: 1,        // 1% burn per threshold
+    BURN_PERCENTAGE: 0.5,      // 0.5% burn per threshold (changed from 1%)
     SUSTAINED_HOURS: 24        // Must be sustained for 24 hours
   },
 

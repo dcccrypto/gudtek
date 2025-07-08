@@ -10,9 +10,20 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { formatTokenBalance } from '@/lib/wallet'
+import Image from 'next/image'
 
 // Constants
 const TOTAL_SUPPLY = 1000000000 // 1 billion
+
+// Mascot images for wallets
+const MASCOT_IMAGES = [
+  '/artwork/mascot4.png',
+  '/artwork/mascot3.png',
+  '/artwork/mascot2.png',
+  '/artwork/mascot1.png',
+  '/artwork/chess.png',
+  '/Gudmusic/tekisgud.jpg'
+]
 
 interface TokenData {
   priceUsd: string
@@ -111,7 +122,7 @@ export default function TokenomicsPage() {
     for (let i = 100000; i <= 1000000; i += 100000) {
       thresholds.push({
         threshold: i,
-        percentage: 1, // 1% burn for each $100K milestone
+        percentage: 0.5, // 0.5% burn for each $100K milestone (0.5% of total supply)
         achieved: marketCap >= i,
         timeAboveThreshold: marketCap >= i ? 24 : 0 // Simplified - in real implementation, track actual time
       })
@@ -147,13 +158,13 @@ export default function TokenomicsPage() {
   // Pie chart data
   const pieData = [
     {
-      name: 'Team Held',
+      name: 'Gud Tek Held',
       value: totalTeamHeld,
       percentage: totalTeamHeld > 0 ? (totalTeamHeld / (totalTeamHeld + totalTeamBurned)) * 100 : 0,
       color: '#f97316'
     },
     {
-      name: 'Team Burned',
+      name: 'Gud Tek Burned',
       value: totalTeamBurned,
       percentage: totalTeamBurned > 0 ? (totalTeamBurned / (totalTeamHeld + totalTeamBurned)) * 100 : 0,
       color: '#dc2626'
@@ -288,12 +299,17 @@ export default function TokenomicsPage() {
                     <Flame className="w-6 h-6 text-orange-700" />
                   </div>
                   <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                    Team Allocation Status
+                    Gud Tek Allocation Status
                   </span>
                 </CardTitle>
                 <div className="flex items-center space-x-2 mt-2">
                   <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
                   <span className="text-sm text-gray-600 font-medium">Live blockchain data</span>
+                </div>
+                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <p className="text-sm text-gray-700 font-medium">
+                    💡 When Gud Tek supply runs out, we'll keep accumulating more with BONK and Ray creator fees
+                  </p>
                 </div>
               </CardHeader>
               <CardContent className="relative">
@@ -334,7 +350,7 @@ export default function TokenomicsPage() {
                       <div className="text-2xl font-black text-gray-900">
                         {formatTokenBalance(totalTeamHeld + totalTeamBurned)}
                       </div>
-                      <div className="text-sm text-gray-600 font-medium">Total Team</div>
+                      <div className="text-sm text-gray-600 font-medium">Total Gud Tek</div>
                     </div>
                   </div>
                 </div>
@@ -430,7 +446,7 @@ export default function TokenomicsPage() {
                   </div>
                   
                   <div className="text-xs text-gray-600 mt-4 p-2 bg-white/10 rounded-lg">
-                    <strong>Burn Logic:</strong> For every $100K market cap milestone sustained for 24+ hours, 1% of total supply is burned.
+                    <strong>Burn Logic:</strong> For every $100K market cap milestone sustained for 24+ hours, 0.5% of total supply is burned.
                   </div>
                 </div>
               </CardContent>
@@ -453,7 +469,7 @@ export default function TokenomicsPage() {
                   <Target className="w-6 h-6 text-blue-700" />
                 </div>
                 <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Team Wallet Breakdown
+                  Gud Tek Wallet Breakdown
                 </span>
               </CardTitle>
               <div className="flex items-center space-x-2 mt-2">
@@ -483,8 +499,14 @@ export default function TokenomicsPage() {
                       >
                         <td className="py-4 px-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                              {index + 1}
+                            <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-white/30 flex-shrink-0">
+                              <Image
+                                src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
+                                alt={`Mascot ${index + 1}`}
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                             <div>
                               <div className="font-semibold text-gray-900">{wallet.label}</div>
@@ -527,7 +549,7 @@ export default function TokenomicsPage() {
                       <td className="py-5 px-4 font-bold text-gray-900 text-lg rounded-bl-xl">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full" />
-                          <span>Total Team Holdings</span>
+                          <span>Total Gud Tek Holdings</span>
                         </div>
                       </td>
                       <td className="text-right py-5 px-4">

@@ -6,17 +6,14 @@ const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
 const GUDTEK_MINT = '5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk'
 const BURN_ADDRESS = '11111111111111111111111111111111'
 
-// Team wallet addresses (deduplicated)
+// Team wallet addresses (deduplicated, removed wallets 5, 6, 7)
 const TEAM_WALLETS = [
-  'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q',
-  '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF',
-  'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK',
-  'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif',
-  'CVvJnDPcWdmUJN6YC4cHwBS2cJ9T8KoVh3xEwGquHYz1',
-  'uKE7LbZtV3JTKw3958un754jnD9rsZQKoEHxn32bM1i',
-  '2SyCvqbXdJBu1gB1bwATJwntgzXzEmfQTGu2tGroBTzf',
-  'kHERC1oef4TYVvvfzapN6u9HKgkvp8tKKeAqVyFiCPL',
-  '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'
+  'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q', // Gud Tek Wallet 1
+  '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF', // Gud Tek Wallet 2
+  'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK', // Gud Tek Wallet 3
+  'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif', // Gud Tek Wallet 4
+  'kHERC1oef4TYVvvfzapN6u9HKgkvp8tKKeAqVyFiCPL', // Gud Tek Wallet 8
+  '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'  // Gud Tek Wallet 9
 ]
 
 interface WalletBalance {
@@ -98,7 +95,7 @@ export async function GET(request: NextRequest) {
         address,
         balance,
         percentage: (balance / 1000000000) * 100, // Percentage of 1B total supply
-        label: `Team Wallet ${index + 1}`
+        label: `Gud Tek Wallet ${index + 1}`
       }
     })
 
