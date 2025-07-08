@@ -8,6 +8,9 @@ const RAW_TEAM_WALLETS = [
   '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'  // Wallet 9
 ]
 
+// BONK-owned wallet with locked 7% supply
+export const BONK_LOCKED_WALLET = 'HCGZE3Z3PkPR2kSGT8GweNigpg3ev7HhqQektseVCRPJ'
+
 /**
  * Deduplicate team wallet addresses
  * Removes duplicate wallet addresses from the provided list

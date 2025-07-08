@@ -19,7 +19,8 @@ const MASCOT_IMAGES = [
   '/artwork/mascot2.png',
   '/artwork/mascot1.png',
   '/artwork/chess.png',
-  '/Gudmusic/tekisgud.jpg'
+  '/Gudmusic/tekisgud.jpg',
+  '/bonk1-bonk-logo.svg' // BONK logo for the locked wallet
 ]
 
 interface TokenData {
@@ -312,46 +313,65 @@ export default function CompactTokenomics() {
                 </CardHeader>
                 <CardContent className="relative">
                   <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                    {walletData.map((wallet, index) => (
-                      <div key={wallet.address} className="p-3 bg-white/10 rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
-                              <Image
-                                src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
-                                alt={`Mascot ${index + 1}`}
-                                width={32}
-                                height={32}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900 text-sm">{wallet.label}</div>
-                              <div className="text-xs text-gray-600 font-mono">
-                                {formatAddress(wallet.address)}
+                    {walletData.map((wallet, index) => {
+                      const isBonkWallet = wallet.label.includes('BONK')
+                      return (
+                        <div key={wallet.address} className={`p-3 rounded-xl border transition-all duration-200 ${
+                          isBonkWallet 
+                            ? 'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/15' 
+                            : 'bg-white/10 border-white/20 hover:bg-white/15'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
+                                isBonkWallet ? 'border-orange-500/50' : 'border-white/30'
+                              }`}>
+                                <Image
+                                  src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
+                                  alt={`Mascot ${index + 1}`}
+                                  width={32}
+                                  height={32}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div>
+                                <div className={`font-semibold text-sm ${
+                                  isBonkWallet ? 'text-orange-900' : 'text-gray-900'
+                                }`}>
+                                  {wallet.label}
+                                </div>
+                                <div className="text-xs text-gray-600 font-mono">
+                                  {formatAddress(wallet.address)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-mono font-bold text-sm text-gray-900">
-                              {formatTokenBalance(wallet.balance)}
+                            <div className="text-right">
+                              <div className={`font-mono font-bold text-sm ${
+                                isBonkWallet ? 'text-orange-900' : 'text-gray-900'
+                              }`}>
+                                {formatTokenBalance(wallet.balance)}
+                              </div>
+                              <div className="text-xs text-gray-600">{wallet.percentage.toFixed(2)}%</div>
                             </div>
-                            <div className="text-xs text-gray-600">{wallet.percentage.toFixed(2)}%</div>
+                          </div>
+                          <div className="mt-2">
+                            <a
+                              href={`https://solscan.io/account/${wallet.address}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center space-x-1 text-xs transition-colors ${
+                                isBonkWallet 
+                                  ? 'text-orange-700 hover:text-orange-800' 
+                                  : 'text-blue-700 hover:text-blue-800'
+                              }`}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>View on Solscan</span>
+                            </a>
                           </div>
                         </div>
-                        <div className="mt-2">
-                          <a
-                            href={`https://solscan.io/account/${wallet.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center space-x-1 text-xs text-blue-700 hover:text-blue-800 transition-colors"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            <span>View on Solscan</span>
-                          </a>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                   
                   {/* Total */}

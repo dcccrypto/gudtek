@@ -16,6 +16,9 @@ const TEAM_WALLETS = [
   '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'  // Gud Tek Wallet 9
 ]
 
+// BONK-owned wallet with locked 7% supply
+const BONK_LOCKED_WALLET = 'HCGZE3Z3PkPR2kSGT8GweNigpg3ev7HhqQektseVCRPJ'
+
 interface WalletBalance {
   address: string
   balance: number
@@ -99,23 +102,34 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const walletBalances = await Promise.all(balancePromises)
+    // Fetch BONK-owned wallet balance
+    const bonkBalance = await fetchWalletBalance(BONK_LOCKED_WALLET)
+    const bonkWallet = {
+      address: BONK_LOCKED_WALLET,
+      balance: bonkBalance,
+      percentage: (bonkBalance / 1000000000) * 100, // Percentage of 1B total supply
+      label: 'BONK Locked (7% Supply)'
+    }
+
+    const teamWalletBalances = await Promise.all(balancePromises)
+    const allWallets = [...teamWalletBalances, bonkWallet]
     
-    // Calculate totals
-    const totalTeamHeld = walletBalances.reduce((sum, wallet) => sum + wallet.balance, 0)
+    // Calculate totals (including BONK wallet)
+    const totalTeamHeld = teamWalletBalances.reduce((sum, wallet) => sum + wallet.balance, 0)
     const totalTeamBurned = await calculateTeamBurnedTokens()
     
-    console.log(`Team stats: Held=${totalTeamHeld.toLocaleString()}, Burned=${totalTeamBurned.toLocaleString()}`)
+    console.log(`Team stats: Held=${totalTeamHeld.toLocaleString()}, Burned=${totalTeamBurned.toLocaleString()}, BONK Locked=${bonkBalance.toLocaleString()}`)
 
     return NextResponse.json({
       success: true,
-      wallets: walletBalances,
+      wallets: allWallets,
       totals: {
         totalTeamHeld,
         totalTeamBurned,
         totalTeamAllocated: totalTeamHeld + totalTeamBurned,
         percentageHeld: (totalTeamHeld / (totalTeamHeld + totalTeamBurned)) * 100,
-        percentageBurned: (totalTeamBurned / (totalTeamHeld + totalTeamBurned)) * 100
+        percentageBurned: (totalTeamBurned / (totalTeamHeld + totalTeamBurned)) * 100,
+        bonkLocked: bonkBalance
       },
       lastUpdated: new Date().toISOString()
     })

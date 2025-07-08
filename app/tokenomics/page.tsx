@@ -22,7 +22,8 @@ const MASCOT_IMAGES = [
   '/artwork/mascot2.png',
   '/artwork/mascot1.png',
   '/artwork/chess.png',
-  '/Gudmusic/tekisgud.jpg'
+  '/Gudmusic/tekisgud.jpg',
+  '/bonk1-bonk-logo.svg' // BONK logo for the locked wallet
 ]
 
 interface TokenData {
@@ -489,33 +490,49 @@ export default function TokenomicsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {walletData.map((wallet, index) => (
-                      <motion.tr 
-                        key={wallet.address} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-white/10 hover:bg-white/10 transition-all duration-200 group"
-                      >
-                        <td className="py-4 px-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-white/30 flex-shrink-0">
-                              <Image
-                                src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
-                                alt={`Mascot ${index + 1}`}
-                                width={40}
-                                height={40}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">{wallet.label}</div>
-                              <div className="text-sm text-gray-600 font-mono bg-gray-100/50 px-2 py-1 rounded-lg">
-                                {formatAddress(wallet.address)}
+                    {walletData.map((wallet, index) => {
+                      const isBonkWallet = wallet.label.includes('BONK')
+                      return (
+                        <motion.tr 
+                          key={wallet.address} 
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={`border-b transition-all duration-200 group ${
+                            isBonkWallet 
+                              ? 'border-orange-500/20 hover:bg-orange-500/10' 
+                              : 'border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          <td className="py-4 px-4">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-10 h-10 rounded-xl overflow-hidden border-2 flex-shrink-0 ${
+                                isBonkWallet ? 'border-orange-500/50' : 'border-white/30'
+                              }`}>
+                                <Image
+                                  src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
+                                  alt={`Mascot ${index + 1}`}
+                                  width={40}
+                                  height={40}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div>
+                                <div className={`font-semibold ${
+                                  isBonkWallet ? 'text-orange-900' : 'text-gray-900'
+                                }`}>
+                                  {wallet.label}
+                                </div>
+                                <div className={`text-sm font-mono px-2 py-1 rounded-lg ${
+                                  isBonkWallet 
+                                    ? 'text-orange-700 bg-orange-100/50' 
+                                    : 'text-gray-600 bg-gray-100/50'
+                                }`}>
+                                  {formatAddress(wallet.address)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
                         <td className="text-right py-4 px-4">
                           <div className="font-mono font-bold text-lg text-gray-900">
                             {formatTokenBalance(wallet.balance)}
@@ -542,7 +559,8 @@ export default function TokenomicsPage() {
                           </motion.a>
                         </td>
                       </motion.tr>
-                    ))}
+                    )
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-white/30 bg-white/10">
