@@ -175,7 +175,7 @@ export default function CompactTokenomics() {
         >
           <h2 className="text-5xl md:text-6xl font-black text-gray-900 mb-6">
             <DollarSign className="inline-block mr-4" aria-hidden="true" />
-            Gud Tek Tokenomics
+            Tekonomics
           </h2>
           <p className="text-xl text-gray-800 max-w-3xl mx-auto">
             Real-time transparency with live wallet balances, burn mechanics, and community milestones

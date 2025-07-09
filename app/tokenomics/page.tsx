@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
-import { ExternalLink, Flame, Target, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { ExternalLink, Flame, Target, TrendingUp, Clock, CheckCircle, AlertCircle, DollarSign, Lock } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import SiteFooter from '@/components/SiteFooter'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { formatTokenBalance } from '@/lib/wallet'
 import Image from 'next/image'
 
@@ -38,16 +37,6 @@ interface WalletData {
   label: string
 }
 
-interface GoalData {
-  id: string
-  name: string
-  target: number
-  current: number
-  progress: number
-  unit: string
-  description: string
-}
-
 interface BurnThreshold {
   threshold: number
   percentage: number
@@ -55,13 +44,36 @@ interface BurnThreshold {
   timeAboveThreshold: number
 }
 
+interface SupplyData {
+  totalSupply: number
+  circulatingSupply: number
+  teamHoldings: {
+    address: string
+    balance: number
+    percentage: number
+    label: string
+    isLocked: boolean
+  }[]
+  bonkHoldings: {
+    address: string
+    balance: number
+    percentage: number
+    label: string
+    isLocked: boolean
+  }
+  totalTeamBalance: number
+  totalTeamPercentage: number
+  totalLockedSupply: number
+  totalLockedPercentage: number
+}
+
 export default function TokenomicsPage() {
   const [tokenData, setTokenData] = useState<TokenData | null>(null)
   const [walletData, setWalletData] = useState<WalletData[]>([])
-  const [goalData, setGoalData] = useState<GoalData[]>([])
   const [burnThresholds, setBurnThresholds] = useState<BurnThreshold[]>([])
   const [totalTeamHeld, setTotalTeamHeld] = useState(0)
   const [totalTeamBurned, setTotalTeamBurned] = useState(0)
+  const [supplyData, setSupplyData] = useState<SupplyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -98,17 +110,17 @@ export default function TokenomicsPage() {
     }
   }
 
-  // Fetch goals data from API
-  const fetchGoalsData = async () => {
+  // Fetch comprehensive supply data from API
+  const fetchSupplyData = async () => {
     try {
-      const response = await fetch('/api/tokenomics/goals')
+      const response = await fetch('/api/total-supply')
       const data = await response.json()
       
       if (data.success) {
-        setGoalData(data.goals)
+        setSupplyData(data.data)
       }
     } catch (error) {
-      console.error('Error fetching goals data:', error)
+      console.error('Error fetching supply data:', error)
     }
   }
 
@@ -123,9 +135,9 @@ export default function TokenomicsPage() {
     for (let i = 100000; i <= 1000000; i += 100000) {
       thresholds.push({
         threshold: i,
-        percentage: 0.5, // 0.5% burn for each $100K milestone (0.5% of total supply)
+        percentage: 0.5, // 0.5% burn for each $100K milestone
         achieved: marketCap >= i,
-        timeAboveThreshold: marketCap >= i ? 24 : 0 // Simplified - in real implementation, track actual time
+        timeAboveThreshold: marketCap >= i ? 24 : 0
       })
     }
 
@@ -138,7 +150,7 @@ export default function TokenomicsPage() {
     await Promise.all([
       fetchTokenData(),
       fetchWalletBalances(),
-      fetchGoalsData()
+      fetchSupplyData()
     ])
     setLastUpdated(new Date())
     setLoading(false)
@@ -185,78 +197,40 @@ export default function TokenomicsPage() {
     return `${address.slice(0, 4)}...${address.slice(-4)}`
   }
 
-  if (loading && walletData.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
-        <div className="fixed inset-0 opacity-10" aria-hidden="true">
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
-        </div>
-        <Navbar />
-        <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <h1 className="text-2xl font-bold">Loading Tokenomics Data...</h1>
-            <p className="text-gray-700">Fetching live wallet balances and market data</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-yellow-400 to-orange-500 overflow-hidden text-gray-900">
-      {/* Enhanced Background with Multiple Layers */}
-      <div className="fixed inset-0" aria-hidden="true">
-        {/* Animated Grid */}
-        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
-        
-        {/* Floating Orbs */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-orange-300/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-yellow-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-orange-200/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-orange-500/10 via-transparent to-yellow-400/10" />
+      {/* Animated Background Grid */}
+      <div className="fixed inset-0 opacity-10" aria-hidden="true">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
       </div>
 
       <Navbar />
 
-      <main className="relative z-10 max-w-7xl mx-auto pt-28 px-4 pb-16">
-        {/* Enhanced Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center mb-16"
-        >
-          {/* Badge */}
+      <main className="relative z-10 py-12 px-4 pt-24">
+        {/* Decorative mascot image 4 */}
+        <img
+          src="/artwork/mascot4.png"
+          alt="Gud Tek Mascot Decorative 4"
+          className="hidden sm:block absolute bottom-6 right-6 sm:w-64 md:w-80 opacity-80 rotate-[5deg] z-10 pointer-events-none select-none filter drop-shadow-lg"
+          aria-hidden="true"
+        />
+        <div className="max-w-7xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center px-4 py-2 mb-6 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-sm font-semibold text-gray-800 shadow-lg"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Live Transparency Hub
-          </motion.div>
-
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent tracking-tight">
-            Tokenomics
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-800 mb-8 max-w-4xl mx-auto leading-relaxed font-medium">
-            Real-time team wallet balances, burn progress, and community milestones.
-            <br />
-            <span className="text-lg text-gray-700 font-normal">Complete transparency for the $GUDTEK ecosystem.</span>
-          </p>
-
-          {/* Status Bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="inline-flex items-center space-x-6 px-6 py-3 bg-white/25 backdrop-blur-md border border-white/40 rounded-2xl shadow-xl"
+            transition={{ duration: 0.8 }}
+            className="text-center mb-10"
           >
+            <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-6">
+              <DollarSign className="inline-block mr-4" aria-hidden="true" />
+              Tekonomics
+            </h1>
+            <p className="text-xl text-gray-800 max-w-3xl mx-auto">
+              Real-time transparency with live wallet balances, burn mechanics, and community milestones
+            </p>
+            
+            {/* Live Status */}
+            <div className="inline-flex items-center space-x-4 mt-6 px-4 py-2 bg-white/25 backdrop-blur-md border border-white/40 rounded-2xl shadow-xl">
             <div className="flex items-center space-x-2 text-sm font-medium text-gray-800">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span>Live Data</span>
@@ -266,33 +240,232 @@ export default function TokenomicsPage() {
               <Clock className="w-4 h-4" />
               <span>Updated: {lastUpdated.toLocaleTimeString()}</span>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={refreshData}
-              className="px-4 py-2 bg-white/30 hover:bg-white/40 rounded-xl text-sm font-semibold text-gray-800 transition-all duration-200 border border-white/30 hover:border-white/50 shadow-md"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 border border-gray-600 border-t-transparent rounded-full animate-spin" />
-                  <span>Updating...</span>
-                </div>
-              ) : (
-                'Refresh'
-              )}
-            </motion.button>
+            </div>
           </motion.div>
-        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-          {/* Enhanced Team Allocation Pie Chart */}
+          {/* Comprehensive Supply Breakdown Section */}
+          {supplyData && (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="mb-12"
+            >
+              <Card className="bg-white/20 backdrop-blur-xl border border-white/40 shadow-2xl rounded-3xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-orange-500/5" />
+                <CardHeader className="relative pb-6">
+                  <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
+                    <div className="p-3 bg-blue-500/20 rounded-xl">
+                      <DollarSign className="w-8 h-8 text-blue-700" />
+                    </div>
+                    <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Complete Supply Breakdown
+                    </span>
+                  </CardTitle>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                    <span className="text-sm text-gray-600 font-medium">Real-time Helius blockchain data</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="relative">
+                  {/* Key Metrics Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="text-center p-4 bg-white/15 rounded-2xl border border-white/30 backdrop-blur-sm">
+                      <div className="text-3xl font-black text-gray-900 mb-2">
+                        {formatTokenBalance(supplyData.totalSupply)}
+                      </div>
+                      <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">Total Supply</div>
+                      <div className="text-xs text-gray-500 mt-1">Fixed at creation</div>
+                    </div>
+                    
+                    <div className="text-center p-4 bg-white/15 rounded-2xl border border-white/30 backdrop-blur-sm">
+                      <div className="text-3xl font-black text-green-700 mb-2">
+                        {formatTokenBalance(supplyData.circulatingSupply)}
+                      </div>
+                      <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">Circulating Supply</div>
+                      <div className="text-xs text-gray-500 mt-1">{((supplyData.circulatingSupply / supplyData.totalSupply) * 100).toFixed(1)}% of total</div>
+                    </div>
+                    
+                    <div className="text-center p-4 bg-white/15 rounded-2xl border border-white/30 backdrop-blur-sm">
+                      <div className="text-3xl font-black text-orange-700 mb-2">
+                        {formatTokenBalance(supplyData.totalLockedSupply)}
+                      </div>
+                      <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">Locked Supply</div>
+                      <div className="text-xs text-gray-500 mt-1">{supplyData.totalLockedPercentage.toFixed(1)}% locked</div>
+                    </div>
+                    
+                    <div className="text-center p-4 bg-white/15 rounded-2xl border border-white/30 backdrop-blur-sm">
+                      <div className="text-3xl font-black text-blue-700 mb-2">
+                        {formatTokenBalance(supplyData.totalTeamBalance)}
+                      </div>
+                      <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">Team Holdings</div>
+                      <div className="text-xs text-gray-500 mt-1">{supplyData.totalTeamPercentage.toFixed(1)}% of supply</div>
+                    </div>
+                  </div>
+
+                  {/* Supply Distribution Chart */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Supply Breakdown Pie Chart */}
+                    <div className="bg-white/10 rounded-2xl p-6 border border-white/20">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+                        <span>Supply Distribution</span>
+                      </h3>
+                      <div className="h-64 relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: 'Circulating', value: supplyData.circulatingSupply, color: '#22c55e' },
+                                { name: 'BONK Locked', value: supplyData.bonkHoldings.balance, color: '#f97316' },
+                                { name: 'Team Holdings', value: supplyData.totalTeamBalance, color: '#3b82f6' }
+                              ]}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={5}
+                              dataKey="value"
+                              stroke="rgba(255,255,255,0.3)"
+                              strokeWidth={2}
+                            >
+                              {[
+                                { name: 'Circulating', value: supplyData.circulatingSupply, color: '#22c55e' },
+                                { name: 'BONK Locked', value: supplyData.bonkHoldings.balance, color: '#f97316' },
+                                { name: 'Team Holdings', value: supplyData.totalTeamBalance, color: '#3b82f6' }
+                              ].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value: number) => [formatTokenBalance(value), 'Tokens']}
+                              contentStyle={{
+                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                border: 'none',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                                backdropFilter: 'blur(10px)'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Detailed Wallet Breakdown */}
+                    <div className="bg-white/10 rounded-2xl p-6 border border-white/20">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full" />
+                        <span>Wallet Holdings</span>
+                      </h3>
+                      <div className="space-y-4 max-h-64 overflow-y-auto">
+                        {/* BONK Wallet */}
+                        <div className="p-4 bg-orange-500/20 border border-orange-500/30 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <Image src="/bonk1-bonk-logo.svg" alt="BONK logo" width={16} height={16} className="w-4 h-4" />
+                              <span className="font-bold text-orange-900">{supplyData.bonkHoldings.label}</span>
+                            </div>
+                            <Badge className="bg-orange-500/20 text-orange-900 border-orange-500/30">LOCKED</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600 font-mono">
+                              {formatAddress(supplyData.bonkHoldings.address)}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-mono font-bold text-orange-900">
+                                {formatTokenBalance(supplyData.bonkHoldings.balance)}
+                              </div>
+                              <div className="text-xs text-gray-600">{supplyData.bonkHoldings.percentage.toFixed(2)}%</div>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <a
+                              href={`https://solscan.io/account/${supplyData.bonkHoldings.address}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-1 text-xs text-orange-700 hover:text-orange-800 transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>Verify on Solscan</span>
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* Team Wallets */}
+                        {supplyData.teamHoldings.map((wallet, index) => (
+                          <div key={wallet.address} className="p-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/15 transition-all duration-200">
+                            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/30 flex-shrink-0">
+                                  <Image
+                                    src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
+                                    alt={`Mascot ${index + 1}`}
+                                    width={24}
+                                    height={24}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <span className="font-semibold text-gray-900 text-sm">{`Gud Tek Wallet ${index + 1}`}</span>
+                </div>
+                              {wallet.label.includes('Dev') && (
+                                <Badge className="bg-blue-500/20 text-blue-900 border-blue-500/30 text-xs">DEV</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs text-gray-600 font-mono">
+                                {formatAddress(wallet.address)}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-mono font-bold text-sm text-gray-900">
+                                  {formatTokenBalance(wallet.balance)}
+                                </div>
+                                <div className="text-xs text-gray-600">{wallet.percentage.toFixed(2)}%</div>
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <a
+                                href={`https://solscan.io/account/${wallet.address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center space-x-1 text-xs text-blue-700 hover:text-blue-800 transition-colors"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>View on Solscan</span>
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Info */}
+                  <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-gray-700">
+                        <p className="font-semibold mb-1">Supply Transparency</p>
+                        <p>All data is fetched live from the Solana blockchain using Helius API. Team wallets are publicly tracked, and the BONK wallet contains locked supply that cannot be moved. Circulating supply represents tokens available for trading.</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          </motion.div>
+          )}
+
+          {/* 2x2 Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:col-span-2">
+              {/* Gud Tek Allocation Pie Chart */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/20 hover:border-white/40 rounded-3xl overflow-hidden">
+                <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/20 hover:border-white/40 rounded-3xl overflow-hidden h-full">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-yellow-500/5" />
               <CardHeader className="relative pb-4">
                 <CardTitle className="flex items-center space-x-3 text-xl font-bold">
@@ -300,7 +473,7 @@ export default function TokenomicsPage() {
                     <Flame className="w-6 h-6 text-orange-700" />
                   </div>
                   <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                    Gud Tek Allocation Status
+                        Gud Tek Allocation
                   </span>
                 </CardTitle>
                 <div className="flex items-center space-x-2 mt-2">
@@ -314,15 +487,15 @@ export default function TokenomicsPage() {
                 </div>
               </CardHeader>
               <CardContent className="relative">
-                <div className="h-72 mb-6 relative">
+                    <div className="h-48 mb-3 relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={70}
-                        outerRadius={120}
+                            innerRadius={45}
+                            outerRadius={75}
                         paddingAngle={3}
                         dataKey="value"
                         stroke="rgba(255,255,255,0.3)"
@@ -348,129 +521,45 @@ export default function TokenomicsPage() {
                   {/* Center Label */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="text-center">
-                      <div className="text-2xl font-black text-gray-900">
+                          <div className="text-lg font-black text-gray-900">
                         {formatTokenBalance(totalTeamHeld + totalTeamBurned)}
+                          </div>
+                          <div className="text-xs text-gray-600 font-medium">Total Gud Tek</div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 font-medium">Total Gud Tek</div>
                     </div>
+                    
+                    {/* Legend */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {pieData.map((entry, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-gray-900">{entry.name}</div>
+                            <div className="text-xs text-gray-600">{formatTokenBalance(entry.value)}</div>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white/20 rounded-2xl backdrop-blur-sm border border-white/30">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full shadow-lg"></div>
-                      <span className="font-semibold text-gray-900">Team Held</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg text-gray-900">{formatTokenBalance(totalTeamHeld)}</div>
-                      <div className="text-sm text-gray-600">{pieData[0].percentage.toFixed(1)}% of team allocation</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 bg-white/20 rounded-2xl backdrop-blur-sm border border-white/30">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 bg-gradient-to-r from-red-500 to-red-700 rounded-full shadow-lg"></div>
-                      <span className="font-semibold text-gray-900">Team Burned</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg text-gray-900">{formatTokenBalance(totalTeamBurned)}</div>
-                      <div className="text-sm text-gray-600">{pieData[1].percentage.toFixed(1)}% of team allocation</div>
-                    </div>
-                  </div>
+                      ))}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Enhanced Market Cap Burn Logic */}
+              {/* Gud Tek Wallets */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/20 hover:border-white/40 rounded-3xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-blue-500/5" />
+                <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/20 hover:border-white/40 rounded-3xl overflow-hidden h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5" />
               <CardHeader className="relative pb-4">
-                <CardTitle className="flex items-center space-x-3 text-xl font-bold">
-                  <div className="p-2 bg-green-500/20 rounded-xl group-hover:bg-green-500/30 transition-colors duration-300">
-                    <TrendingUp className="w-6 h-6 text-green-700" />
-                  </div>
-                  <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                    Market Cap Burn Thresholds
-                  </span>
-                </CardTitle>
-                <div className="flex items-center space-x-2 mt-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-sm text-gray-600 font-medium">Real-time market data</span>
-                </div>
-              </CardHeader>
-              <CardContent className="relative">
-                <div className="space-y-6">
-                  {/* Current Market Cap Display */}
-                  <div className="text-center p-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-2xl border border-white/30 backdrop-blur-sm">
-                    <div className="text-4xl font-black text-gray-900 mb-2">
-                      ${tokenData ? formatNumber(tokenData.marketCap) : '---'}
-                    </div>
-                    <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">Current Market Cap</div>
-                    <div className="mt-3 flex items-center justify-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-xs text-gray-600">Live from DexScreener</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {burnThresholds.map((threshold, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          {threshold.achieved ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-gray-500" />
-                          )}
-                          <span className="text-sm font-medium">
-                            ${formatNumber(threshold.threshold)}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={threshold.achieved ? "default" : "secondary"}>
-                            {threshold.percentage}% burn
-                          </Badge>
-                          {threshold.achieved && threshold.timeAboveThreshold >= 24 && (
-                            <Badge variant="outline" className="text-green-700 border-green-700">
-                              Eligible
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="text-xs text-gray-600 mt-4 p-2 bg-white/10 rounded-lg">
-                    <strong>Burn Logic:</strong> For every $100K market cap milestone sustained for 24+ hours, 0.5% of total supply is burned.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Enhanced Team Wallets Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="mb-16"
-        >
-          <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/20 hover:border-white/40 rounded-3xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5" />
-            <CardHeader className="relative pb-6">
               <CardTitle className="flex items-center space-x-3 text-xl font-bold">
                 <div className="p-2 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors duration-300">
                   <Target className="w-6 h-6 text-blue-700" />
                 </div>
                 <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Gud Tek Wallet Breakdown
+                        Gud Tek Wallets
                 </span>
               </CardTitle>
               <div className="flex items-center space-x-2 mt-2">
@@ -479,251 +568,183 @@ export default function TokenomicsPage() {
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/20">
-                      <th className="text-left py-4 px-4 font-bold text-gray-800 bg-white/10 rounded-tl-xl">Wallet</th>
-                      <th className="text-right py-4 px-4 font-bold text-gray-800 bg-white/10">Balance</th>
-                      <th className="text-right py-4 px-4 font-bold text-gray-800 bg-white/10">% of Supply</th>
-                      <th className="text-center py-4 px-4 font-bold text-gray-800 bg-white/10 rounded-tr-xl">Solscan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {walletData.map((wallet, index) => {
-                      const isBonkWallet = wallet.label.includes('BONK')
+                    <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                    {walletData.filter(w => !w.label.includes('BONK')).map((wallet, index) => {
                       return (
-                        <motion.tr 
-                          key={wallet.address} 
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className={`border-b transition-all duration-200 group ${
-                            isBonkWallet 
-                              ? 'border-orange-500/20 hover:bg-orange-500/10' 
-                              : 'border-white/10 hover:bg-white/10'
-                          }`}
-                        >
-                          <td className="py-4 px-4">
+                          <div key={wallet.address} className={`p-3 rounded-xl border transition-all duration-200`}>
+                            <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className={`w-10 h-10 rounded-xl overflow-hidden border-2 flex-shrink-0 ${
-                                isBonkWallet ? 'border-orange-500/50' : 'border-white/30'
-                              }`}>
+                                <div className={`w-8 h-8 rounded-lg overflow-hidden border-2 flex-shrink-0`}>
                                 <Image
                                   src={MASCOT_IMAGES[index] || '/artwork/mascot1.png'}
                                   alt={`Mascot ${index + 1}`}
-                                  width={40}
-                                  height={40}
+                                    width={32}
+                                    height={32}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
                               <div>
-                                <div className={`font-semibold ${
-                                  isBonkWallet ? 'text-orange-900' : 'text-gray-900'
-                                }`}>
+                                  <div className={`font-semibold text-sm`}>
                                   {wallet.label}
                                 </div>
-                                <div className={`text-sm font-mono px-2 py-1 rounded-lg ${
-                                  isBonkWallet 
-                                    ? 'text-orange-700 bg-orange-100/50' 
-                                    : 'text-gray-600 bg-gray-100/50'
-                                }`}>
+                                  <div className="text-xs text-gray-600 font-mono">
                                   {formatAddress(wallet.address)}
+                    </div>
+                  </div>
+                    </div>
+                    <div className="text-right">
+                                <div className={`font-mono font-bold text-sm`}>
+                                  {formatTokenBalance(wallet.balance)}
                                 </div>
+                                <div className="text-xs text-gray-600">{wallet.percentage.toFixed(2)}%</div>
                               </div>
                             </div>
-                          </td>
-                        <td className="text-right py-4 px-4">
-                          <div className="font-mono font-bold text-lg text-gray-900">
-                            {formatTokenBalance(wallet.balance)}
-                          </div>
-                          <div className="text-xs text-gray-600">GUDTEK</div>
-                        </td>
-                        <td className="text-right py-4 px-4">
-                          <div className="font-bold text-lg text-gray-900">
-                            {wallet.percentage.toFixed(3)}%
-                          </div>
-                          <div className="text-xs text-gray-600">of total supply</div>
-                        </td>
-                        <td className="text-center py-4 px-4">
-                          <motion.a
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            <div className="mt-2">
+                              <a
                             href={`https://solscan.io/account/${wallet.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center space-x-2 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 hover:text-blue-800 transition-all duration-200 rounded-xl border border-blue-500/30 hover:border-blue-500/50"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            <span className="text-sm font-medium">View</span>
-                          </motion.a>
-                        </td>
-                      </motion.tr>
-                    )
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-white/30 bg-white/10">
-                      <td className="py-5 px-4 font-bold text-gray-900 text-lg rounded-bl-xl">
+                                className={`inline-flex items-center space-x-1 text-xs transition-colors`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>View on Solscan</span>
+                              </a>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    
+                    {/* Total */}
+                    <div className="mt-4 p-3 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 rounded-xl border border-orange-500/20">
+                      <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full" />
-                          <span>Total Gud Tek Holdings</span>
+                          <span className="font-bold text-gray-900">Total Holdings</span>
                         </div>
-                      </td>
-                      <td className="text-right py-5 px-4">
-                        <div className="font-mono font-bold text-xl text-gray-900">{formatTokenBalance(totalTeamHeld)}</div>
-                        <div className="text-sm text-gray-600">GUDTEK tokens</div>
-                      </td>
-                      <td className="text-right py-5 px-4">
-                        <div className="font-bold text-xl text-gray-900">{((totalTeamHeld / TOTAL_SUPPLY) * 100).toFixed(3)}%</div>
-                        <div className="text-sm text-gray-600">of total supply</div>
-                      </td>
-                      <td className="rounded-br-xl"></td>
-                    </tr>
-                  </tfoot>
-                </table>
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-lg text-gray-900">{formatTokenBalance(totalTeamHeld)}</div>
+                          <div className="text-sm text-gray-600">{((totalTeamHeld / TOTAL_SUPPLY) * 100).toFixed(2)}%</div>
+                    </div>
+                  </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
+                  </div>
 
-        {/* Enhanced Community Goals */}
+                        {/* Bottom Row - Gud Tek Allocation & Community Goals + Gud Burns */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:col-span-2">
+              {/* Community Goals & Gud Burns Combined */}
         <motion.div
+          className="lg:col-span-2"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-        >
-          <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/20 hover:border-white/40 rounded-3xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5" />
-            <CardHeader className="relative pb-6">
+                transition={{ duration: 0.8, delay: 0.5 }}
+              >
+                <Card className="group bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl rounded-3xl overflow-hidden h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-red-500/5 to-orange-500/5" />
+                  <CardHeader className="relative pb-4">
               <CardTitle className="flex items-center space-x-3 text-xl font-bold">
-                <div className="p-2 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors duration-300">
-                  <Target className="w-6 h-6 text-purple-700" />
+                      <div className="p-2 bg-gradient-to-r from-purple-500/20 to-red-500/20 rounded-xl group-hover:from-purple-500/30 group-hover:to-red-500/30 transition-colors duration-300">
+                        <div className="flex items-center space-x-1">
+                          <Target className="w-5 h-5 text-purple-700" />
+                          <Flame className="w-5 h-5 text-red-700" />
+                        </div>
                 </div>
                 <span className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Community Goals & Burns
+                        Community Goals & Gud Burns
                 </span>
               </CardTitle>
               <div className="flex items-center space-x-2 mt-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-                <span className="text-sm text-gray-600 font-medium">Goal-based token burns</span>
+                      <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-red-500 rounded-full animate-pulse" />
+                      <span className="text-sm text-gray-600 font-medium">Community milestones & burn mechanics</span>
               </div>
             </CardHeader>
-            <CardContent className="relative">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {goalData.map((goal, index) => (
-                  <motion.div 
-                    key={goal.id} 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
-                    className="group/goal space-y-4 p-6 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl hover:bg-white/30 hover:border-white/40 transition-all duration-300"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-lg text-gray-900">{goal.name}</h3>
-                      <Badge 
-                        variant="outline" 
-                        className="bg-white/30 border-white/50 text-gray-800 font-semibold px-3 py-1"
-                      >
-                        {goal.current.toLocaleString()} / {goal.target.toLocaleString()}
-                      </Badge>
+                  <CardContent className="relative space-y-4">
+                    {/* Current Market Cap Display */}
+                    <div className="text-center p-3 bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-xl border border-white/30 backdrop-blur-sm">
+                      <div className="text-xl font-black text-gray-900 mb-1">
+                        ${tokenData ? formatNumber(tokenData.marketCap) : '---'}
+                      </div>
+                      <div className="text-xs text-gray-600 font-semibold uppercase tracking-wide">Current Market Cap</div>
                     </div>
                     
-                    {/* Enhanced Progress Bar */}
+                    {/* Gud Burns Section */}
                     <div className="space-y-2">
-                      <div className="relative">
-                        <div className="w-full bg-white/30 rounded-full h-4 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${goal.progress}%` }}
-                            transition={{ duration: 1, delay: 0.8 + index * 0.1, ease: "easeOut" }}
-                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full relative overflow-hidden"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
-                          </motion.div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Flame className="w-4 h-4 text-red-600" />
+                        <span className="font-bold text-sm text-gray-900">Gud Burns 🔥</span>
                         </div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs font-bold text-gray-900 drop-shadow-sm">
-                            {goal.progress.toFixed(1)}%
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {burnThresholds.slice(0, 4).map((threshold, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              {threshold.achieved ? (
+                                <CheckCircle className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <AlertCircle className="w-3 h-3 text-gray-500" />
+                              )}
+                              <span className="text-xs font-medium">
+                                ${formatNumber(threshold.threshold)}
                           </span>
                         </div>
+                            <Badge variant={threshold.achieved ? "default" : "secondary"} className="text-xs">
+                              {threshold.percentage}% burn
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 font-medium">
-                        {goal.progress >= 100 ? (
-                          <div className="flex items-center space-x-1 text-green-700">
-                            <CheckCircle className="w-4 h-4" />
-                            <span>Completed!</span>
+                    {/* Community Goals Section */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Target className="w-4 h-4 text-purple-600" />
+                        <span className="font-bold text-sm text-gray-900">Community Goals</span>
+                      </div>
+                      
+                      {/* Blur Overlay for Community Goals */}
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-white/20 backdrop-blur-md rounded-xl z-10 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🚀</div>
+                            <h3 className="text-sm font-black text-gray-900 mb-1">Coming Soon</h3>
+                            <p className="text-gray-700 text-xs max-w-xs mx-auto">
+                              Community milestones in development
+                            </p>
                           </div>
-                        ) : (
-                          `${goal.progress.toFixed(1)}% Complete`
-                        )}
-                      </span>
-                      <span className="font-semibold text-gray-900">
-                        {goal.current.toLocaleString()} {goal.unit}
-                      </span>
-                    </div>
-                    
-                    <div className="p-3 bg-white/20 rounded-xl border border-white/30">
-                      <p className="text-sm text-gray-700 font-medium">
-                        {goal.description}
-                      </p>
-                      {goal.progress >= 100 && (
-                        <div className="mt-2 flex items-center space-x-2 text-green-700">
-                          <Flame className="w-4 h-4" />
-                          <span className="text-xs font-bold">BURN TRIGGERED!</span>
                         </div>
-                      )}
+                        
+                        {/* Placeholder Content (blurred) */}
+                        <div className="space-y-2 opacity-50">
+                          {['Twitter Followers', 'Token Holders'].map((goal, index) => (
+                            <div key={index} className="p-2 bg-white/10 rounded-lg">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-gray-900 text-xs">{goal}</span>
+                                <Badge variant="outline" className="text-xs">0.5% burn</Badge>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1">
+                                <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full" style={{ width: `${Math.random() * 60 + 20}%` }} />
+                              </div>
                     </div>
-                  </motion.div>
                 ))}
               </div>
-              
-              {/* Summary Section */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 1.2 }}
-                className="mt-8 p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl border border-white/30 backdrop-blur-sm"
-              >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-2 bg-purple-500/20 rounded-xl">
-                    <Flame className="w-5 h-5 text-purple-700" />
                   </div>
-                  <h4 className="font-bold text-lg text-gray-900">Goal-Based Burns</h4>
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed mb-4">
-                  When community goals are achieved, the corresponding percentage of total supply is automatically burned, 
-                  reducing the circulating supply and increasing scarcity for all holders.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-white/20 rounded-xl">
-                    <div className="text-lg font-bold text-gray-900">{goalData.length}</div>
-                    <div className="text-xs text-gray-600">Total Goals</div>
-                  </div>
-                  <div className="text-center p-3 bg-white/20 rounded-xl">
-                    <div className="text-lg font-bold text-green-700">
-                      {goalData.filter(goal => goal.progress >= 100).length}
                     </div>
-                    <div className="text-xs text-gray-600">Completed</div>
-                  </div>
-                  <div className="text-center p-3 bg-white/20 rounded-xl">
-                    <div className="text-lg font-bold text-orange-700">2.0%</div>
-                    <div className="text-xs text-gray-600">Total Burn %</div>
-                  </div>
-                  <div className="text-center p-3 bg-white/20 rounded-xl">
-                    <div className="text-lg font-bold text-purple-700">
-                      {goalData.filter(goal => goal.progress >= 100).length * 0.5}%
+
+                    {/* Logic Explanation */}
+                    <div className="text-xs text-gray-600 p-2 bg-white/10 rounded-lg">
+                      <strong>Logic:</strong> 0.5% supply burned per $100K milestone (24h sustained) + community milestones
                     </div>
-                    <div className="text-xs text-gray-600">Achieved</div>
-                  </div>
-                </div>
-              </motion.div>
             </CardContent>
           </Card>
         </motion.div>
+            </div>
+          </div>
+
+          
+        </div>
       </main>
 
       <SiteFooter />
