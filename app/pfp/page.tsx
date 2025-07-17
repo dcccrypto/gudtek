@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
+import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Separator } from '@/components/ui/separator';
@@ -310,75 +311,7 @@ export default function PFPGenerator() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#000_1px,transparent_1px),linear-gradient(180deg,#000_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse" />
       </div>
 
-      {/* Navbar - Matching main site */}
-      <nav className="fixed left-0 right-0 top-0 bg-white/10 backdrop-filter backdrop-blur-lg z-50 shadow-lg border-b-2 border-orange-400/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              {/* Logo/Site Title */}
-              <Link href="/" className="flex-shrink-0 flex items-center">
-                <img
-                  src="/images/gudtek-logo.png"
-                  alt="Gud Tek Logo"
-                  className="h-8 w-8 rounded-full mr-2"
-                  width={32}
-                  height={32}
-                />
-                <span className="text-gray-900 font-black text-xl tracking-tight">GUD TEK</span>
-              </Link>
-            </div>
-            {/* Desktop Nav */}
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      item.href === '/pfp'
-                        ? 'bg-orange-600 text-white'
-                        : 'text-gray-900 hover:bg-orange-500/20'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <Button
-                variant="ghost"
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-900 hover:text-white hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                onClick={() => setIsNavOpen(!isNavOpen)}
-              >
-                {isNavOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
-            </div>
-          </div>
-        </div>
-        {/* Mobile menu */}
-        {isNavOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    item.href === '/pfp'
-                      ? 'bg-orange-600 text-white'
-                      : 'text-gray-900 hover:bg-orange-500/20'
-                  }`}
-                onClick={() => setIsNavOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-        )}
-      </nav>
+      <Navbar />
 
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-4xl mx-auto">
