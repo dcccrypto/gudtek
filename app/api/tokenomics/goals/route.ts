@@ -15,7 +15,7 @@ interface Goal {
 async function fetchTwitterFollowers(): Promise<number> {
   // Placeholder implementation
   // In production, use Twitter API v2:
-  // const response = await fetch(`https://api.twitter.com/2/users/by/username/gudtek_solana?user.fields=public_metrics`, {
+  // const response = await fetch(`https://api.twitter.com/2/users/by/username/gudtek_sol?user.fields=public_metrics`, {
   //   headers: { 'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}` }
   // })
   return 2500 // Placeholder value

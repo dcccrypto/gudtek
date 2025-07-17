@@ -21,7 +21,7 @@ export default function SiteFooter() {
         {/* Social links */}
         <div className="flex items-center justify-center space-x-6 mb-6">
           <a
-            href="https://x.com/gudtek_solana"
+            href="https://x.com/gudtek_sol"
             target="_blank"
             rel="noopener noreferrer"
             className="p-3 rounded-full bg-white/20 hover:bg-white/40 border-2 border-orange-400 shadow-lg transition-all duration-200 hover:scale-110"

@@ -80,7 +80,7 @@ export default function Navbar() {
             <div className="flex items-center space-x-2 ml-4 pl-4 border-l border-orange-400/30">
               {/* X/Twitter */}
               <a
-                href="https://x.com/gudtek_solana"
+                href="https://x.com/gudtek_sol"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-md text-gray-800 hover:text-gray-900 hover:bg-white/10 transition-colors duration-200"
@@ -160,7 +160,7 @@ export default function Navbar() {
           <div className="flex items-center justify-center space-x-4 pt-4 mt-4 border-t border-orange-400/30">
             {/* X/Twitter */}
             <a
-              href="https://x.com/gudtek_solana"
+              href="https://x.com/gudtek_sol"
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 rounded-md text-gray-800 hover:text-gray-900 hover:bg-white/10 transition-colors duration-200"
