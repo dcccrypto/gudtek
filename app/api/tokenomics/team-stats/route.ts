@@ -6,14 +6,14 @@ const HELIUS_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
 const GUDTEK_MINT = '5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk'
 const BURN_ADDRESS = '11111111111111111111111111111111'
 
-// Team wallet addresses (deduplicated, removed wallets 5, 6, 7)
+// Team wallet addresses with lock status
 const TEAM_WALLETS = [
-  'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q', // Gud Tek Wallet 1
-  '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF', // Gud Tek Wallet 2
-  'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK', // Gud Tek Wallet 3
-  'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif', // Gud Tek Wallet 4
-  'kHERC1oef4TYVvvfzapN6u9HKgkvp8tKKeAqVyFiCPL', // Gud Tek Wallet 8
-  '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe'  // Gud Tek Wallet 9
+  { address: 'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q', label: 'Dev Wallet (Main)', isLocked: true },
+  { address: '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF', label: 'Gud Tek Wallet 2', isLocked: false },
+  { address: 'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK', label: 'Gud Tek Wallet 3', isLocked: false },
+  { address: 'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif', label: 'Gud Tek Wallet 4', isLocked: false },
+  { address: 'kHERC1oef4TYVvvfzapN6u9HKgkvp8tKKeAqVyFiCPL', label: 'Gud Tek Wallet 8', isLocked: false },
+  { address: '2PAMf5atKdhKg14GeYmj58iVRjhSSEHYRkFAJdAcFnQe', label: 'Gud Tek Wallet 9', isLocked: false }
 ]
 
 // BONK-owned wallet with locked 7% supply
@@ -71,7 +71,7 @@ async function calculateTeamBurnedTokens(): Promise<number> {
   
   try {
     const balances = await Promise.allSettled(
-      TEAM_WALLETS.map(address => fetchWalletBalance(address))
+      TEAM_WALLETS.map(wallet => fetchWalletBalance(wallet.address))
     )
     
     const totalCurrentBalance = balances
@@ -92,13 +92,14 @@ export async function GET(request: NextRequest) {
     console.log('Fetching team wallet stats...')
     
     // Fetch all team wallet balances
-    const balancePromises = TEAM_WALLETS.map(async (address, index) => {
-      const balance = await fetchWalletBalance(address)
+    const balancePromises = TEAM_WALLETS.map(async (wallet, index) => {
+      const balance = await fetchWalletBalance(wallet.address)
       return {
-        address,
+        address: wallet.address,
         balance,
         percentage: (balance / 1000000000) * 100, // Percentage of 1B total supply
-        label: `Gud Tek Wallet ${index + 1}`
+        label: wallet.label,
+        isLocked: wallet.isLocked
       }
     })
 
@@ -118,7 +119,13 @@ export async function GET(request: NextRequest) {
     const totalTeamHeld = teamWalletBalances.reduce((sum, wallet) => sum + wallet.balance, 0)
     const totalTeamBurned = await calculateTeamBurnedTokens()
     
-    console.log(`Team stats: Held=${totalTeamHeld.toLocaleString()}, Burned=${totalTeamBurned.toLocaleString()}, BONK Locked=${bonkBalance.toLocaleString()}`)
+    // Calculate locked supply (BONK wallet + locked team wallets)
+    const lockedTeamBalance = teamWalletBalances
+      .filter(wallet => wallet.isLocked)
+      .reduce((sum, wallet) => sum + wallet.balance, 0)
+    const totalLockedSupply = bonkBalance + lockedTeamBalance
+    
+    console.log(`Team stats: Held=${totalTeamHeld.toLocaleString()}, Burned=${totalTeamBurned.toLocaleString()}, BONK Locked=${bonkBalance.toLocaleString()}, Total Locked=${totalLockedSupply.toLocaleString()}`)
 
     return NextResponse.json({
       success: true,
@@ -129,7 +136,9 @@ export async function GET(request: NextRequest) {
         totalTeamAllocated: totalTeamHeld + totalTeamBurned,
         percentageHeld: (totalTeamHeld / (totalTeamHeld + totalTeamBurned)) * 100,
         percentageBurned: (totalTeamBurned / (totalTeamHeld + totalTeamBurned)) * 100,
-        bonkLocked: bonkBalance
+        bonkLocked: bonkBalance,
+        totalLockedSupply,
+        lockedTeamBalance
       },
       lastUpdated: new Date().toISOString()
     })

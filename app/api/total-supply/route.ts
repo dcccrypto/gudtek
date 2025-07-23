@@ -6,7 +6,7 @@ const GUDTEK_MINT = '5QUgMieD3YQr9sEZjMAHKs1cKJiEhnvRNZatvzvcbonk'
 
 // Team wallet addresses with labels
 const TEAM_WALLETS = [
-  { address: 'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q', label: 'Dev Wallet (Main)', isLocked: false },
+  { address: 'DB4omYJ9ncPssq7w2Sdxbrv8tnUQHbUDCL9hgFgjgd4Q', label: 'Dev Wallet (Main)', isLocked: true },
   { address: '7bsrT959areHws9ezYFHF4uCxwYLVRGzjbdqZZNrdCwF', label: 'Team Wallet 2', isLocked: false },
   { address: 'FUt76P3GQ7Zkvd75RH1FhcfHbUWkXRdX4osXWZe8n9zK', label: 'Team Wallet 3', isLocked: false },
   { address: 'DskhuBJRSW5xL4SzUijpQU5fMLRfnw6hXfxJx2WPSnif', label: 'Team Wallet 4', isLocked: false },
@@ -157,7 +157,11 @@ export async function GET(request: NextRequest) {
     const totalTeamBalance = teamHoldings.reduce((sum, wallet) => sum + wallet.balance, 0)
     const totalTeamPercentage = (totalTeamBalance / totalSupply) * 100
     
-    const totalLockedSupply = bonkBalance // Only BONK wallet is locked for now
+    // Calculate locked supply (BONK wallet + locked team wallets)
+    const lockedTeamBalance = teamHoldings
+      .filter(wallet => wallet.isLocked)
+      .reduce((sum, wallet) => sum + wallet.balance, 0)
+    const totalLockedSupply = bonkBalance + lockedTeamBalance
     const totalLockedPercentage = (totalLockedSupply / totalSupply) * 100
     
     const circulatingSupply = totalSupply - totalLockedSupply

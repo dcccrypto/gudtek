@@ -35,6 +35,7 @@ interface WalletData {
   balance: number
   percentage: number
   label: string
+  isLocked?: boolean
 }
 
 interface BurnThreshold {
@@ -318,7 +319,8 @@ export default function TokenomicsPage() {
                               data={[
                                 { name: 'Circulating', value: supplyData.circulatingSupply, color: '#22c55e' },
                                 { name: 'BONK Locked', value: supplyData.bonkHoldings.balance, color: '#f97316' },
-                                { name: 'Team Holdings', value: supplyData.totalTeamBalance, color: '#3b82f6' }
+                                { name: 'Dev Locked', value: supplyData.teamHoldings.filter(w => w.isLocked).reduce((sum, w) => sum + w.balance, 0), color: '#ea580c' },
+                                { name: 'Team Holdings', value: supplyData.teamHoldings.filter(w => !w.isLocked).reduce((sum, w) => sum + w.balance, 0), color: '#3b82f6' }
                               ]}
                               cx="50%"
                               cy="50%"
@@ -332,7 +334,8 @@ export default function TokenomicsPage() {
                               {[
                                 { name: 'Circulating', value: supplyData.circulatingSupply, color: '#22c55e' },
                                 { name: 'BONK Locked', value: supplyData.bonkHoldings.balance, color: '#f97316' },
-                                { name: 'Team Holdings', value: supplyData.totalTeamBalance, color: '#3b82f6' }
+                                { name: 'Dev Locked', value: supplyData.teamHoldings.filter(w => w.isLocked).reduce((sum, w) => sum + w.balance, 0), color: '#ea580c' },
+                                { name: 'Team Holdings', value: supplyData.teamHoldings.filter(w => !w.isLocked).reduce((sum, w) => sum + w.balance, 0), color: '#3b82f6' }
                               ].map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.color} />
                               ))}
@@ -394,7 +397,11 @@ export default function TokenomicsPage() {
 
                         {/* Team Wallets */}
                         {supplyData.teamHoldings.map((wallet, index) => (
-                          <div key={wallet.address} className="p-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/15 transition-all duration-200">
+                          <div key={wallet.address} className={`p-3 border rounded-xl hover:bg-white/15 transition-all duration-200 ${
+                            wallet.isLocked 
+                              ? 'bg-orange-500/20 border-orange-500/30' 
+                              : 'bg-white/10 border-white/20'
+                          }`}>
                             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                                 <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/30 flex-shrink-0">
@@ -406,11 +413,16 @@ export default function TokenomicsPage() {
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
-                                <span className="font-semibold text-gray-900 text-sm">{`Gud Tek Wallet ${index + 1}`}</span>
+                                <span className="font-semibold text-gray-900 text-sm">{wallet.label}</span>
                 </div>
-                              {wallet.label.includes('Dev') && (
-                                <Badge className="bg-blue-500/20 text-blue-900 border-blue-500/30 text-xs">DEV</Badge>
-                              )}
+                              <div className="flex items-center space-x-2">
+                                {wallet.label.includes('Dev') && (
+                                  <Badge className="bg-blue-500/20 text-blue-900 border-blue-500/30 text-xs">DEV</Badge>
+                                )}
+                                {wallet.isLocked && (
+                                  <Badge className="bg-orange-500/20 text-orange-900 border-orange-500/30 text-xs">LOCKED</Badge>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center justify-between">
                               <div className="text-xs text-gray-600 font-mono">
@@ -446,7 +458,7 @@ export default function TokenomicsPage() {
                       <AlertCircle className="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-gray-700">
                         <p className="font-semibold mb-1">Supply Transparency</p>
-                        <p>All data is fetched live from the Solana blockchain using Helius API. Team wallets are publicly tracked, and the BONK wallet contains locked supply that cannot be moved. Circulating supply represents tokens available for trading.</p>
+                        <p>All data is fetched live from the Solana blockchain using Helius API. Team wallets are publicly tracked. The BONK wallet and Dev wallet contain locked supply that cannot be moved. Circulating supply represents tokens available for trading.</p>
                       </div>
                     </div>
                   </div>
@@ -571,7 +583,11 @@ export default function TokenomicsPage() {
                     <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                     {walletData.filter(w => !w.label.includes('BONK')).map((wallet, index) => {
                       return (
-                          <div key={wallet.address} className={`p-3 rounded-xl border transition-all duration-200`}>
+                          <div key={wallet.address} className={`p-3 rounded-xl border transition-all duration-200 ${
+                            wallet.isLocked 
+                              ? 'bg-orange-500/20 border-orange-500/30' 
+                              : 'bg-white/10 border-white/20'
+                          }`}>
                             <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                                 <div className={`w-8 h-8 rounded-lg overflow-hidden border-2 flex-shrink-0`}>
@@ -597,6 +613,9 @@ export default function TokenomicsPage() {
                                   {formatTokenBalance(wallet.balance)}
                                 </div>
                                 <div className="text-xs text-gray-600">{wallet.percentage.toFixed(2)}%</div>
+                                {wallet.isLocked && (
+                                  <div className="text-xs text-orange-700 font-semibold">LOCKED</div>
+                                )}
                               </div>
                             </div>
                             <div className="mt-2">
